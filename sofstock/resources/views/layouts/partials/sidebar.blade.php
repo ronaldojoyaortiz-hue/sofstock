@@ -24,19 +24,26 @@
 
             @php
                 $links = [
-                    ['label' => 'Dashboard',   'route' => 'dashboard.index',  'icon' => 'home'],
-                    ['label' => 'Usuarios',    'route' => 'users.index',      'icon' => 'users'],
-                    ['label' => 'Perfiles/Roles', 'route' => 'roles.index',   'icon' => 'shield'],
-                    ['label' => 'Categorías',  'route' => 'categories.index', 'icon' => 'tag'],
-                    ['label' => 'Productos',   'route' => 'producto.index',   'icon' => 'box'],
-                    ['label' => 'Reportes',    'route' => 'reports.index',    'icon' => 'chart'],
-                    ['label' => 'Configuración', 'route' => 'settings.index', 'icon' => 'cog'],
+                    ['label' => 'Dashboard',            'route' => 'dashboard.index',       'icon' => 'home'],
+                    ['label' => 'Usuarios',             'route' => 'users.index',           'icon' => 'users'],
+                    ['label' => 'Perfiles/Roles',       'route' => 'roles.index',           'icon' => 'shield'],
+                    ['label' => 'Categorías',           'route' => 'categorias.index',      'icon' => 'tag'],
+                    ['label' => 'Productos',            'route' => 'productos.index',       'icon' => 'box'],
+                    ['label' => 'Facturas',             'route' => 'facturas.index',        'icon' => 'chart'],
+                    ['label' => 'Detalles de factura',  'route' => 'detallefacturas.index', 'icon' => 'chart'],
+                    ['label' => 'Proveedores',          'route' => 'proveedores.index',     'icon' => 'users'],
+                    ['label' => 'Reportes',             'route' => 'reports.index',         'icon' => 'chart'],
+                    ['label' => 'Configuración',        'route' => 'settings.index',        'icon' => 'cog'],
                 ];
             @endphp
 
             @foreach ($links as $link)
                 @php
-                    $active = Route::has($link['route']) && request()->routeIs(explode('.', $link['route'])[0] . '.*');
+                    $active = Route::has($link['route']) && (
+                        $link['route'] === 'home'
+                            ? request()->routeIs('home')
+                            : request()->routeIs(explode('.', $link['route'])[0] . '.*')
+                    );
                 @endphp
                 <a
                     href="{{ Route::has($link['route']) ? route($link['route']) : '#' }}"
