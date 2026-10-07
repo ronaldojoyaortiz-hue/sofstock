@@ -17,7 +17,7 @@
 </div>
 
 
-<x-card class="max-w-2xl">
+<x-card class="max-w-6xl">
 
     <div class="flex justify-between items-center mb-4">
 
