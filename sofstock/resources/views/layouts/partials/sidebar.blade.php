@@ -16,7 +16,7 @@
             <div class="w-9 h-9 rounded-lg bg-primary-600 flex items-center justify-center text-white font-bold">
                 A
             </div>
-            <span class="text-white font-semibold text-lg tracking-tight">{{ config('app.name', 'AdminPanel') }}</span>
+            <span class="text-white font-semibold text-lg tracking-tight">{{ config('app.name', 'SofStock') }}</span>
         </div>
 
         {{-- Navegación --}}
@@ -24,14 +24,13 @@
 
             @php
                 $links = [
-                    ['label' => 'Dashboard',            'route' => 'dashboard.index',       'icon' => 'home'],
-                    ['label' => 'Panel de administración', 'route' => 'welcome.index',      'icon' => 'home'],
+                    ['label' => 'Panel principal',      'route' => 'dashboard.index',       'icon' => 'home'],
                     ['label' => 'Usuarios',             'route' => 'usuarios.index',       'icon' => 'users'],
                     ['label' => 'Perfiles/Roles',       'route' => 'roles.index',           'icon' => 'shield'],
                     ['label' => 'Categorías',           'route' => 'categorias.index',      'icon' => 'tag'],
                     ['label' => 'Productos',            'route' => 'productos.index',       'icon' => 'box'],
-                    ['label' => 'Facturas',             'route' => 'facturas.index',        'icon' => 'chart'],
                     ['label' => 'Detalles de factura',  'route' => 'detallefacturas.index', 'icon' => 'chart'],
+                    ['label' => 'Facturas',             'route' => 'facturas.index',        'icon' => 'chart'],
                     ['label' => 'Proveedores',          'route' => 'proveedores.index',     'icon' => 'users'],
                     ['label' => 'Reportes',             'route' => 'reports.index',         'icon' => 'chart'],
                     ['label' => 'Configuración',        'route' => 'settings.index',        'icon' => 'cog'],

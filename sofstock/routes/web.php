@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\RolController;
@@ -10,10 +11,13 @@ use App\Http\Controllers\ProveedorController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\UsuarioController;
 
+
+Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+Route::post('/login', [AuthController::class, 'login'])->name('login.authenticate');
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
 Route::redirect('/', '/dashboard')->name('home');
 Route::get('/dashboard', DashboardController::class)->name('dashboard.index');
-Route::view('/welcome', 'welcome')->name('welcome.index');
-
 Route::resource('categorias', CategoriaController::class);
 Route::resource('roles', RolController::class);
 Route::resource('productos', ProductoController::class);

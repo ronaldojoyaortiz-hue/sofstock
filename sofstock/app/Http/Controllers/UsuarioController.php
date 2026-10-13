@@ -11,7 +11,7 @@ use Illuminate\Http\Request;
 class UsuarioController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Mostrar el listado de recursos.
      */
     public function index()
     {
@@ -20,7 +20,7 @@ class UsuarioController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Mostrar el formulario para crear un recurso.
      */
     public function create()
     {
@@ -30,7 +30,7 @@ class UsuarioController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Guardar un recurso recién creado.
      */
     public function store(Request $request)
     {
@@ -44,6 +44,7 @@ class UsuarioController extends Controller
         ]);
 
         $validated['contrasena'] = Hash::make($validated['contrasena']);
+        $validated['activo'] = $request->boolean('activo');
         Usuario::create($validated);
 
         return redirect()->route('usuarios.index')
@@ -51,7 +52,7 @@ class UsuarioController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * Mostrar el recurso indicado.
      */
     public function show(String $id)
     {
@@ -59,7 +60,7 @@ class UsuarioController extends Controller
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Mostrar el formulario para editar el recurso indicado.
      */
     public function edit(string $id)
     {
@@ -70,7 +71,7 @@ class UsuarioController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Actualizar el recurso indicado.
      */
     public function update(Request $request, string $id)
     {
@@ -91,6 +92,7 @@ class UsuarioController extends Controller
         }
 
         $validated['activo'] = $request->boolean('activo');
+        $validated['fecha_actualizacion'] = now();
         $usuario->update($validated);
 
         return redirect()->route('usuarios.index')
@@ -98,11 +100,11 @@ class UsuarioController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Eliminar el recurso indicado.
      */
     public function destroy(string $id)
     {
-        Usuario::destroy($id);
+        Usuario::findOrFail($id)->delete();
 
         return redirect()->route('usuarios.index')
             ->with('success', 'Usuario eliminado exitosamente.');

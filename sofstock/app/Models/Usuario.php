@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Usuario extends Model
+class Usuario extends Authenticatable
 {
     protected $table = 'usuarios';
+
+    protected $primaryKey = 'id';
 
     public $timestamps = false;
 
@@ -22,11 +24,25 @@ class Usuario extends Model
         'fecha_actualizacion'
     ];
 
+    protected $hidden = [
+        'contrasena',
+    ];
+
     protected $casts = [
         'activo' => 'boolean',
         'fecha_registro' => 'datetime',
         'fecha_actualizacion' => 'datetime',
     ];
+
+    public function getAuthPasswordName(): string
+    {
+        return 'contrasena';
+    }
+
+    public function getAuthPassword(): string
+    {
+        return $this->contrasena;
+    }
 
     public function rol(): BelongsTo
     {

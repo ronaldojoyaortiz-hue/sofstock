@@ -12,16 +12,16 @@ class ProductoController extends Controller
 {
     public function __construct(private ProductoService $productoService) {}
     /**
-     * Display a listing of the resource.
+     * Mostrar el listado de recursos.
      */
     public function index()
     {
-        $productos = Producto::with(['categoria', 'proveedor'])->get();
+        $productos = Producto::with('categoria')->get();
         return view('productos.index', compact('productos'));
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Mostrar el formulario para crear un recurso.
      */
     public function create()
     {
@@ -31,7 +31,7 @@ class ProductoController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Guardar un recurso recién creado.
      */
     public function store(Request $request)
     {
@@ -43,7 +43,7 @@ class ProductoController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * Mostrar el recurso indicado.
      */
     public function show(string $id)
     {
@@ -51,7 +51,7 @@ class ProductoController extends Controller
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Mostrar el formulario para editar el recurso indicado.
      */
     public function edit(string $id)
     {
@@ -62,7 +62,7 @@ class ProductoController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Actualizar el recurso indicado.
      */
     public function update(Request $request, string $id)
     {
@@ -74,7 +74,7 @@ class ProductoController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Eliminar el recurso indicado.
      */
     public function destroy(string $id)
     {
@@ -90,10 +90,13 @@ class ProductoController extends Controller
         return $request->validate([
             'nombre' => ['required', 'string', 'max:150'],
             'descripcion' => ['nullable', 'string'],
+            'marca' => ['nullable', 'string', 'max:100'],
             'id_categoria' => ['required', 'integer', 'exists:categorias,id_categoria'],
             'id_proveedor' => ['nullable', 'integer', 'exists:proveedores,id_proveedor'],
             'stock_actual' => ['required', 'integer', 'min:0'],
             'precio_base' => ['required', 'numeric', 'min:0'],
+            'precio_compra' => ['nullable', 'numeric', 'min:0'],
+            'activo' => ['required', 'boolean'],
         ]);
     }
 }

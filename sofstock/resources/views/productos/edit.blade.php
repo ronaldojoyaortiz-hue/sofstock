@@ -28,7 +28,9 @@
             @method('PUT')
 
             <x-input name="nombre" label="Nombre" :value="old('nombre', $producto->nombre)" required />
+            <x-input name="marca" label="Marca" :value="old('marca', $producto->marca)" />
             <x-input name="precio_base" label="Precio" type="number" step="0.01" min="0" :value="old('precio_base', $producto->precio_base)" required />
+            <x-input name="precio_compra" label="Precio compra" type="number" step="0.01" min="0" :value="old('precio_compra', $producto->precio_compra)" />
             <x-input name="stock_actual" label="Stock" type="number" step="1" min="0" :value="old('stock_actual', $producto->stock_actual)" required />
             <div><label for="descripcion" class="mb-1.5 block text-sm font-medium text-slate-700">Descripción</label><textarea id="descripcion" name="descripcion" rows="3" class="w-full rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm">{{ old('descripcion', $producto->descripcion) }}</textarea></div>
 
@@ -39,6 +41,17 @@
                         <option value="{{ $categoria->id_categoria }}" @selected(old('id_categoria', $producto->id_categoria) == $categoria->id_categoria)>{{ $categoria->nombre }}</option>
                     @endforeach
                 </select>
+            </div>
+
+            <div>
+                <label for="activo" class="mb-1.5 block text-sm font-medium text-slate-700">Estado</label>
+                <select id="activo" name="activo" required class="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary-500">
+                    <option value="1" @selected(old('activo', $producto->activo ? '1' : '0') == '1')>Activo</option>
+                    <option value="0" @selected(old('activo', $producto->activo ? '1' : '0') == '0')>Inactivo</option>
+                </select>
+                @error('activo')
+                    <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
+                @enderror
             </div>
 
             <div>

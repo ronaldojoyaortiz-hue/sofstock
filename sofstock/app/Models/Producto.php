@@ -13,12 +13,14 @@ class Producto extends Model
     protected $fillable = [
         'nombre',
         'descripcion',
+        'marca',
         'id_categoria',
         'id_proveedor',
         'stock_actual',
         'stock_minimo',
         'unidad_base',
         'precio_base',
+        'precio_compra',
         'activo',
         'fecha_registro',
         'fecha_actualizacion'
@@ -28,6 +30,7 @@ class Producto extends Model
         'stock_actual' => 'integer',
         'stock_minimo' => 'integer',
         'precio_base' => 'decimal:2',
+        'precio_compra' => 'decimal:2',
         'activo' => 'boolean',
         'fecha_registro' => 'datetime',
         'fecha_actualizacion' => 'datetime',

@@ -39,32 +39,33 @@
             <thead class="bg-slate-100">
 
                 <tr>
-
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">ID</th>
                     <th scope="col"
                         class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                         Nombre
                     </th>
+
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Descripción</th>
 
                     <th scope="col"
                         class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                         Precio
                     </th>
 
-                    <th scope="col"
-                        class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        Precio compra
+                    </th>
+
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                         Stock
                     </th>
 
-                    <th scope="col"
-                        class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                        Categoría
-                    </th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Categoría</th>
 
                     <th scope="col"
-                        class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                        Proveedor
-                    </th>
+                        class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Marca</th>
 
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Estado</th>
                     <th scope="col"
                         class="px-6 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider">
                         Acciones
@@ -80,36 +81,30 @@
                 @forelse ($productos as $producto)
 
                     <tr class="hover:bg-slate-50">
-
-                        <!-- Nombre -->
+                        <td class="px-4 py-4 whitespace-nowrap">{{ $producto->id }}</td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             {{ $producto->nombre }}
                         </td>
-
-
-                        <!-- Precio -->
+                        <td class="px-4 py-4">{{ $producto->descripcion ?: '—' }}</td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            ${{ number_format($producto->precio_base, 2) }}
+                            ${{ number_format((float) $producto->precio_base, 2, ',', '.') }}
                         </td>
-
-
-                        <!-- Stock -->
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            {{ number_format((float) $producto->stock_actual, 0, ',', '.') }}
+                        <td class="px-4 py-4 whitespace-nowrap">
+                            ${{ number_format((float) $producto->precio_compra, 2, ',', '.') }}
                         </td>
-
-
-                        <!-- Categoría -->
                         <td class="px-6 py-4 whitespace-nowrap">
-
+                            {{ number_format((float) $producto->stock_actual, 2, ',', '.') }}
+                        </td>
+                        <td class="px-4 py-4 whitespace-nowrap">
                             {{ $producto->categoria->nombre ?? 'Sin categoría' }}
-
                         </td>
-
-                        <td class="px-6 py-4 whitespace-nowrap">
-
-                            {{ $producto->proveedor->razon_social ?? 'Sin proveedor' }}
-
+                        <td class="px-4 py-4 whitespace-nowrap">
+                            {{ $producto->marca ?: '—' }}
+                        </td>
+                        <td class="px-4 py-4 whitespace-nowrap">
+                            <span class="rounded-full px-2.5 py-1 text-xs font-medium {{ $producto->activo ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600' }}">
+                                {{ $producto->activo ? 'Activo' : 'Inactivo' }}
+                            </span>
                         </td>
 
 
@@ -179,7 +174,7 @@
 
                     <tr>
 
-                        <td colspan="6"
+                        <td colspan="10"
                             class="px-6 py-8 text-center text-slate-500">
 
                             No hay productos registrados.

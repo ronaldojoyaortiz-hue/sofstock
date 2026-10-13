@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Dashboard')
-@section('page-title', 'Dashboard')
+@section('title', 'Panel principal')
+@section('page-title', 'Panel principal')
 
 @section('content')
 

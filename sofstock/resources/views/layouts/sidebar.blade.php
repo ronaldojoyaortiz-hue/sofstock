@@ -12,7 +12,7 @@
     x-data="{
         openSubmenus: {},
         init() {
-            // Auto-open Dashboard menu on page load
+            // Abrir automáticamente el menú del panel principal al cargar la página
             this.initializeActiveMenus();
         },
         initializeActiveMenus() {

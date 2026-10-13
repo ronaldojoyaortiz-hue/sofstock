@@ -23,14 +23,14 @@ class FacturaController extends Controller
     {
         $productos = $this->facturaService->productosDisponibles();
 
-        return view('facturas.create', compact('productos'));
+        return view('detallefactura.create', compact('productos'));
     }
 
     public function store(FacturaRequest $request)
     {
         $factura = $this->facturaService->guardar($request->validated());
 
-        return redirect()->route('facturas.index')
+        return redirect()->route('detallefacturas.index')
             ->with('success', 'Factura creada correctamente.');
     }
 
@@ -46,14 +46,14 @@ class FacturaController extends Controller
         $factura = $this->facturaService->buscar($factura->id_factura);
         $productos = $this->facturaService->productosDisponibles();
 
-        return view('facturas.edit', compact('factura', 'productos'));
+        return view('detallefactura.edit', compact('factura', 'productos'));
     }
 
     public function update(FacturaRequest $request, Facturas $factura)
     {
         $this->facturaService->actualizar($factura, $request->validated());
 
-        return redirect()->route('facturas.index')
+        return redirect()->route('detallefacturas.index')
             ->with('success', 'Factura actualizada correctamente.');
     }
 
@@ -61,7 +61,7 @@ class FacturaController extends Controller
     {
         $this->facturaService->eliminar($factura);
 
-        return redirect()->route('facturas.index')
+        return redirect()->route('detallefacturas.index')
             ->with('success', 'Factura eliminada correctamente.');
     }
 }

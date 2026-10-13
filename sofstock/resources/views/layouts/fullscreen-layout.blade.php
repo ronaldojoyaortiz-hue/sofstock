@@ -6,15 +6,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ $title ?? 'Dashboard' }} | TailAdmin - Laravel Tailwind CSS Admin Dashboard Template</title>
+    <title>{{ $title ?? 'Panel principal' }} | SofStock - Plantilla del panel de administración</title>
 
-    <!-- Scripts -->
+    <!-- Archivos de JavaScript -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
-    <!-- Alpine.js -->
+    <!-- Biblioteca Alpine.js -->
     {{-- <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script> --}}
 
-    <!-- Theme Store -->
+    <!-- Configuración del tema -->
     <script>
         document.addEventListener('alpine:init', () => {
             Alpine.store('theme', {
@@ -45,20 +45,20 @@
             });
 
             Alpine.store('sidebar', {
-                // Initialize based on screen size
-                isExpanded: window.innerWidth >= 1280, // true for desktop, false for mobile
+                // Inicializar según el tamaño de la pantalla
+                isExpanded: window.innerWidth >= 1280, // Activado en escritorio y desactivado en móviles
                 isMobileOpen: false,
                 isHovered: false,
 
                 toggleExpanded() {
                     this.isExpanded = !this.isExpanded;
-                    // When toggling desktop sidebar, ensure mobile menu is closed
+                    // Al cambiar el menú lateral de escritorio, cerrar el menú móvil
                     this.isMobileOpen = false;
                 },
 
                 toggleMobileOpen() {
                     this.isMobileOpen = !this.isMobileOpen;
-                    // Don't modify isExpanded when toggling mobile menu
+                    // No modificar isExpanded al cambiar el menú móvil
                 },
 
                 setMobileOpen(val) {
@@ -66,7 +66,7 @@
                 },
 
                 setHovered(val) {
-                    // Only allow hover effects on desktop when sidebar is collapsed
+                    // Permitir efectos al pasar el cursor solo en escritorio y con el menú contraído
                     if (window.innerWidth >= 1280 && !this.isExpanded) {
                         this.isHovered = val;
                     }
@@ -75,7 +75,7 @@
         });
     </script>
 
-    <!-- Apply dark mode immediately to prevent flash -->
+    <!-- Aplicar el modo oscuro de inmediato para evitar parpadeos -->
     <script>
         (function() {
             const savedTheme = localStorage.getItem('theme');
@@ -104,9 +104,9 @@ const checkMobile = () => {
 };
 window.addEventListener('resize', checkMobile);">
 
-    {{-- preloader --}}
+    {{-- Pantalla de carga --}}
     <x-common.preloader/>
-    {{-- preloader end --}}
+    {{-- Fin de la pantalla de carga --}}
 
     @yield('content')
 

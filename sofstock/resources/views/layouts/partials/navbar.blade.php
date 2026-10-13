@@ -13,7 +13,7 @@
             </button>
 
             <h1 class="text-lg sm:text-xl font-semibold text-slate-800 truncate">
-                @yield('page-title', 'Dashboard')
+                @yield('page-title', 'Panel principal')
             </h1>
         </div>
 

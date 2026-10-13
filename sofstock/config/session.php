@@ -6,14 +6,14 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Default Session Driver
+    | Controlador de sesión predeterminado
     |--------------------------------------------------------------------------
     |
-    | This option determines the default session driver that is utilized for
-    | incoming requests. Laravel supports a variety of storage options to
-    | persist session data. Database storage is a great default choice.
+    | Esta opción determina el controlador de sesión predeterminado para las
+    | solicitudes recibidas. Laravel admite diversas opciones para guardar
+    | las sesiones; la base de datos es una buena opción inicial.
     |
-    | Supported: "file", "cookie", "database", "memcached",
+    | Disponibles: "file", "cookie", "database", "memcached",
     |            "redis", "dynamodb", "array"
     |
     */
@@ -22,13 +22,12 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Session Lifetime
+    | Duración de la sesión
     |--------------------------------------------------------------------------
     |
-    | Here you may specify the number of minutes that you wish the session
-    | to be allowed to remain idle before it expires. If you want them
-    | to expire immediately when the browser is closed then you may
-    | indicate that via the expire_on_close configuration option.
+    | Aquí puede definir cuántos minutos puede permanecer inactiva la sesión
+    | antes de vencer. Para que venza al cerrar el navegador, utilice la
+    | opción de configuración expire_on_close.
     |
     */
 
@@ -38,12 +37,12 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Session Encryption
+    | Cifrado de la sesión
     |--------------------------------------------------------------------------
     |
-    | This option allows you to easily specify that all of your session data
-    | should be encrypted before it's stored. All encryption is performed
-    | automatically by Laravel and you may use the session like normal.
+    | Esta opción permite cifrar los datos de la sesión antes de guardarlos.
+    | Laravel realiza el cifrado automáticamente y la sesión puede utilizarse
+    | con normalidad.
     |
     */
 
@@ -51,12 +50,12 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Session File Location
+    | Ubicación de los archivos de sesión
     |--------------------------------------------------------------------------
     |
-    | When utilizing the "file" session driver, the session files are placed
-    | on disk. The default storage location is defined here; however, you
-    | are free to provide another location where they should be stored.
+    | Si se utiliza el controlador de sesión "file", los archivos se guardan
+    | en el disco. Aquí se define la ubicación predeterminada, que puede
+    | cambiarse por otra.
     |
     */
 
@@ -64,12 +63,12 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Session Database Connection
+    | Conexión de base de datos para sesiones
     |--------------------------------------------------------------------------
     |
-    | When using the "database" or "redis" session drivers, you may specify a
-    | connection that should be used to manage these sessions. This should
-    | correspond to a connection in your database configuration options.
+    | Al usar los controladores de sesión "database" o "redis", puede
+    | especificar la conexión que administrará las sesiones. Debe coincidir
+    | con una conexión definida en la configuración de la base de datos.
     |
     */
 
@@ -77,12 +76,12 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Session Database Table
+    | Tabla de base de datos para sesiones
     |--------------------------------------------------------------------------
     |
-    | When using the "database" session driver, you may specify the table to
-    | be used to store sessions. Of course, a sensible default is defined
-    | for you; however, you're welcome to change this to another table.
+    | Al usar el controlador "database", puede especificar la tabla donde se
+    | guardarán las sesiones. Se proporciona una tabla predeterminada, que
+    | puede cambiar si lo necesita.
     |
     */
 
@@ -90,14 +89,14 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Session Cache Store
+    | Almacén de caché para sesiones
     |--------------------------------------------------------------------------
     |
-    | When using one of the framework's cache driven session backends, you may
-    | define the cache store which should be used to store the session data
-    | between requests. This must match one of your defined cache stores.
+    | Al usar un controlador de sesión basado en caché, puede definir el
+    | almacén donde se guardarán los datos entre solicitudes. Debe coincidir
+    | con uno de los almacenes de caché configurados.
     |
-    | Affects: "dynamodb", "memcached", "redis"
+    | Afecta a: "dynamodb", "memcached", "redis"
     |
     */
 
@@ -105,12 +104,12 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Session Sweeping Lottery
+    | Probabilidad de limpieza de sesiones
     |--------------------------------------------------------------------------
     |
-    | Some session drivers must manually sweep their storage location to get
-    | rid of old sessions from storage. Here are the chances that it will
-    | happen on a given request. By default, the odds are 2 out of 100.
+    | Algunos controladores deben limpiar manualmente el almacenamiento para
+    | eliminar sesiones antiguas. Aquí se define la probabilidad de que la
+    | limpieza ocurra en cada solicitud; por defecto es de 2 en 100.
     |
     */
 
@@ -118,28 +117,28 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Session Cookie Name
+    | Nombre de la cookie de sesión
     |--------------------------------------------------------------------------
     |
-    | Here you may change the name of the session cookie that is created by
-    | the framework. Typically, you should not need to change this value
-    | since doing so does not grant a meaningful security improvement.
+    | Aquí puede cambiar el nombre de la cookie de sesión que crea el
+    | framework. Normalmente no hace falta cambiarlo, ya que esto no mejora
+    | la seguridad de forma significativa.
     |
     */
 
     'cookie' => env(
         'SESSION_COOKIE',
-        Str::slug((string) env('APP_NAME', 'laravel')).'-session'
+        Str::slug((string) env('APP_NAME', 'sofstock')).'-session'
     ),
 
     /*
     |--------------------------------------------------------------------------
-    | Session Cookie Path
+    | Ruta de la cookie de sesión
     |--------------------------------------------------------------------------
     |
-    | The session cookie path determines the path for which the cookie will
-    | be regarded as available. Typically, this will be the root path of
-    | your application, but you're free to change this when necessary.
+    | La ruta de la cookie determina en qué rutas estará disponible.
+    | Normalmente será la ruta raíz de la aplicación, pero puede cambiarla
+    | cuando sea necesario.
     |
     */
 
@@ -147,12 +146,12 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Session Cookie Domain
+    | Dominio de la cookie de sesión
     |--------------------------------------------------------------------------
     |
-    | This value determines the domain and subdomains the session cookie is
-    | available to. By default, the cookie will be available to the root
-    | domain without subdomains. Typically, this shouldn't be changed.
+    | Este valor determina en qué dominio y subdominios estará disponible la
+    | cookie de sesión. Por defecto, estará disponible en el dominio raíz,
+    | sin subdominios. Normalmente no es necesario cambiarlo.
     |
     */
 
@@ -160,12 +159,12 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | HTTPS Only Cookies
+    | Cookies solo por HTTPS
     |--------------------------------------------------------------------------
     |
-    | By setting this option to true, session cookies will only be sent back
-    | to the server if the browser has a HTTPS connection. This will keep
-    | the cookie from being sent to you when it can't be done securely.
+    | Al activar esta opción, las cookies de sesión solo se enviarán al
+    | servidor si el navegador utiliza una conexión HTTPS. Así no se
+    | transmitirán cuando no pueda hacerse de forma segura.
     |
     */
 
@@ -173,12 +172,12 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | HTTP Access Only
+    | Acceso solo por HTTP
     |--------------------------------------------------------------------------
     |
-    | Setting this value to true will prevent JavaScript from accessing the
-    | value of the cookie and the cookie will only be accessible through
-    | the HTTP protocol. It's unlikely you should disable this option.
+    | Al activar esta opción, JavaScript no podrá acceder al valor de la
+    | cookie y solo estará disponible mediante el protocolo HTTP. No se
+    | recomienda desactivar esta opción.
     |
     */
 
@@ -186,16 +185,16 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Same-Site Cookies
+    | Cookies del mismo sitio
     |--------------------------------------------------------------------------
     |
-    | This option determines how your cookies behave when cross-site requests
-    | take place, and can be used to mitigate CSRF attacks. By default, we
-    | will set this value to "lax" to permit secure cross-site requests.
+    | Esta opción determina cómo se comportan las cookies en solicitudes
+    | entre sitios y puede ayudar a mitigar ataques CSRF. Por defecto, el
+    | valor "lax" permite solicitudes seguras entre sitios.
     |
     | See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie#samesitesamesite-value
     |
-    | Supported: "lax", "strict", "none", null
+    | Disponibles: "lax", "strict", "none", null
     |
     */
 
@@ -203,12 +202,12 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Partitioned Cookies
+    | Cookies particionadas
     |--------------------------------------------------------------------------
     |
-    | Setting this value to true will tie the cookie to the top-level site for
-    | a cross-site context. Partitioned cookies are accepted by the browser
-    | when flagged "secure" and the Same-Site attribute is set to "none".
+    | Al activar esta opción, la cookie queda vinculada al sitio de nivel
+    | superior en contextos entre sitios. El navegador acepta cookies
+    | particionadas cuando se marcan como "secure" y Same-Site es "none".
     |
     */
 
@@ -216,15 +215,15 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Session Serialization
+    | Serialización de la sesión
     |--------------------------------------------------------------------------
     |
-    | This value controls the serialization strategy for session data, which
-    | is JSON by default. Setting this to "php" allows the storage of PHP
-    | objects in the session but can make an application vulnerable to
-    | "gadget chain" serialization attacks if the APP_KEY is leaked.
+    | Este valor controla la serialización de los datos de sesión, que por
+    | defecto utiliza JSON. El valor "php" permite guardar objetos PHP en la
+    | sesión, pero puede hacer que la aplicación sea vulnerable a ataques de
+    | serialización si se filtra APP_KEY.
     |
-    | Supported: "json", "php"
+    | Disponibles: "json", "php"
     |
     */
 

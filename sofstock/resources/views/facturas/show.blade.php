@@ -6,10 +6,10 @@
 @section('content')
     <div class="mb-6 flex items-center justify-between">
         <div>
-            <h1 class="text-2xl font-bold text-slate-800">Factura</h1>
+            <h1 class="text-2xl font-bold text-slate-800">Factura #{{ $factura->numero ?? $factura->id_factura }}</h1>
             <p class="mt-1 text-sm text-slate-500">#{{ $factura->numero ?? $factura->id_factura }}</p>
         </div>
-        <x-button href="{{ route('facturas.index') }}">Volver</x-button>
+        <x-button href="{{ route('facturas.index') }}">Volver a facturas</x-button>
     </div>
 
     <x-card>
