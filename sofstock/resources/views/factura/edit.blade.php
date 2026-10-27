@@ -23,7 +23,7 @@
 
     <h1 class="mb-6 text-2xl font-bold text-slate-800">Editar factura #{{ $factura->id_factura }}</h1>
     <x-card>
-        <form action="{{ route('detallefacturas.update', $factura) }}" method="POST" class="space-y-6">
+        <form action="{{ route('detallefacturas.update', ['detallefactura' => $factura->id_factura]) }}" method="POST" class="space-y-6">
             @csrf @method('PUT')
             @if ($errors->any())
                 <div class="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">

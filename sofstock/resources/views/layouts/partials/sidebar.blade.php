@@ -24,7 +24,7 @@
 
             @php
                 $links = [
-                    ['label' => 'Panel principal',      'route' => 'dashboard.index',       'icon' => 'home'],
+                    ['label' => 'Inicio',               'route' => 'dashboard.index',       'icon' => 'home'],
                     ['label' => 'Usuarios',             'route' => 'usuarios.index',       'icon' => 'users'],
                     ['label' => 'Perfiles/Roles',       'route' => 'roles.index',           'icon' => 'shield'],
                     ['label' => 'Categorías',           'route' => 'categorias.index',      'icon' => 'tag'],
@@ -33,7 +33,9 @@
                     ['label' => 'Facturas',             'route' => 'facturas.index',        'icon' => 'chart'],
                     ['label' => 'Proveedores',          'route' => 'proveedores.index',     'icon' => 'users'],
                     ['label' => 'Inmobiliarios',        'route' => 'inmuebles.index',       'icon' => 'home'],
+                    ['label' => 'Contratos',            'route' => 'contratos.index',       'icon' => 'history'],
                     ['label' => 'Reportes',             'route' => 'reports.index',         'icon' => 'chart'],
+                    ['label' => 'Auditorías',           'route' => 'auditoria.index',       'icon' => 'history'],
                     ['label' => 'Configuración',        'route' => 'settings.index',        'icon' => 'cog'],
                 ];
             @endphp

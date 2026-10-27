@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Inmobiliario extends Model
 {
@@ -32,6 +33,11 @@ class Inmobiliario extends Model
             'area_m2' => 'decimal:2',
             'archivos' => 'array',
         ];
+    }
+
+    public function contratos(): HasMany
+    {
+        return $this->hasMany(Contrato::class, 'id_inmueble', 'id_inmueble');
     }
 
 }

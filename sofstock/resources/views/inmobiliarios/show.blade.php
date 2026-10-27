@@ -11,6 +11,7 @@
         </div>
         <div class="flex flex-wrap gap-3">
             <x-button variant="secondary" href="{{ route('inmuebles.index') }}">Volver al listado</x-button>
+            <x-button variant="secondary" href="{{ route('inmuebles.contratos.index', $inmobiliario->id_inmueble) }}">Ver contratos</x-button>
             <x-button href="{{ route('inmuebles.edit', $inmobiliario->id_inmueble) }}">Editar inmueble</x-button>
         </div>
     </div>
@@ -42,4 +43,33 @@
         </x-card>
     @endif
 
+    <x-card class="mt-6">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <h2 class="text-xl font-bold text-slate-800">Contratos</h2>
+                <p class="mt-1 text-sm text-slate-500">{{ $inmobiliario->contratos()->count() }} contrato(s) asociado(s) a este inmueble.</p>
+            </div>
+            <x-button href="{{ route('inmuebles.contratos.create', $inmobiliario->id_inmueble) }}">Agregar contrato</x-button>
+        </div>
+
+        @php($contratosRecientes = $inmobiliario->contratos()->orderByDesc('fecha_inicio')->take(5)->get())
+        @if ($contratosRecientes->isNotEmpty())
+            <div class="mt-5 divide-y divide-slate-100">
+                @foreach ($contratosRecientes as $contrato)
+                    <a href="{{ route('inmuebles.contratos.show', [$inmobiliario->id_inmueble, $contrato->id_contrato]) }}" class="flex flex-col gap-2 py-4 first:pt-0 sm:flex-row sm:items-center sm:justify-between">
+                        <span>
+                            <span class="block font-medium text-slate-800">{{ $contrato->numero_contrato }} · {{ $contrato->contraparte }}</span>
+                            <span class="mt-1 block text-sm text-slate-500">{{ $contrato->tipo_contrato }} · Inicio {{ $contrato->fecha_inicio->format('d/m/Y') }}</span>
+                        </span>
+                        <span class="inline-flex w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">{{ $contrato->estado }}</span>
+                    </a>
+                @endforeach
+            </div>
+            <div class="mt-3 border-t border-slate-100 pt-4">
+                <a class="text-sm font-medium text-primary-600 hover:text-primary-800" href="{{ route('inmuebles.contratos.index', $inmobiliario->id_inmueble) }}">Administrar todos los contratos</a>
+            </div>
+        @else
+            <p class="mt-5 rounded-lg border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">Este inmueble todavía no tiene contratos registrados.</p>
+        @endif
+    </x-card>
 @endsection

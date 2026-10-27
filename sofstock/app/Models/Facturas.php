@@ -10,6 +10,11 @@ class Facturas extends Model
 
     protected $primaryKey = 'id_factura';
 
+    public function getRouteKeyName(): string
+    {
+        return 'id_factura';
+    }
+
     protected $fillable = [
         'numero',
         'cliente_nombre',

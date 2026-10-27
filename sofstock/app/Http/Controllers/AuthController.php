@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Usuario;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
@@ -50,6 +52,51 @@ class AuthController extends Controller
         $request->session()->regenerate();
 
         return redirect()->route('dashboard.index');
+    }
+
+    /**
+     * Mostrar el formulario para cambiar la contraseña.
+     */
+    public function showChangePassword()
+    {
+        return view('auth.change-password');
+    }
+
+    /**
+     * Actualizar la contraseña del usuario autenticado.
+     */
+    public function updatePassword(Request $request)
+    {
+        $validated = $request->validate([
+            'contrasena_actual' => ['required', 'string'],
+            'contrasena_nueva' => [
+                'required',
+                'string',
+                'min:8',
+                'confirmed',
+                'different:contrasena_actual',
+            ],
+        ]);
+
+        $usuario = $request->user();
+
+        if (!Hash::check($validated['contrasena_actual'], $usuario->contrasena)) {
+            return back()
+                ->withErrors([
+                    'contrasena_actual' => 'La contraseña actual no es correcta.',
+                ]);
+        }
+
+        $usuario->contrasena = Hash::make($validated['contrasena_nueva']);
+        $usuario->contrasena_cifrada = Crypt::encryptString(
+            $validated['contrasena_nueva']
+        );
+        $usuario->fecha_actualizacion = now();
+        $usuario->save();
+
+        return redirect()
+            ->route('password.change')
+            ->with('success', 'Tu contraseña se cambió correctamente.');
     }
 
     /**

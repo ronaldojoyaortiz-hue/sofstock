@@ -1,11 +1,12 @@
 <?php
 
 namespace App\Repositories;
+
 use App\Models\DetalleFactura;
 
 class DetalleFacturaRepository
 {
-    public function listartodo()
+    public function listarTodo()
     {
         return DetalleFactura::all();
     }
@@ -20,12 +21,12 @@ class DetalleFacturaRepository
         return DetalleFactura::findOrFail($id);
     }
 
-
     public function actualizar($id, array $datos)
     {
-      $detalleFactura = DetalleFactura::findOrFail($id);
+        $detalleFactura = DetalleFactura::findOrFail($id);
         $detalleFactura->update($datos);
-            return $detalleFactura;
+
+        return $detalleFactura;
     }
 
     public function eliminar($id)

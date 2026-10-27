@@ -95,7 +95,6 @@ class ProductoController extends Controller
             'id_proveedor' => ['nullable', 'integer', 'exists:proveedores,id_proveedor'],
             'stock_actual' => ['required', 'integer', 'min:0'],
             'precio_base' => ['required', 'numeric', 'min:0'],
-            'precio_compra' => ['nullable', 'numeric', 'min:0'],
             'activo' => ['required', 'boolean'],
         ]);
     }

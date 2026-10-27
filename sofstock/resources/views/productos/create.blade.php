@@ -41,7 +41,6 @@
             <x-input name="nombre" label="Nombre" :value="old('nombre')" required />
             <x-input name="marca" label="Marca" :value="old('marca')" />
             <x-input name="precio_base" label="Precio base" type="number" step="0.01" min="0" :value="old('precio_base', '')" />
-            <x-input name="precio_compra" label="Precio compra" type="number" step="0.01" min="0" :value="old('precio_compra', '')" />
             <x-input name="stock_actual" label="Stock" type="number" step="1" min="0" :value="old('stock_actual')" required />
 
             <div>

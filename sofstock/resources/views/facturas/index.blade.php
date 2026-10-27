@@ -16,7 +16,14 @@
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-slate-100 text-sm">
                 <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-                    <tr><th class="px-5 py-3">Número</th><th class="px-5 py-3">Cliente</th><th class="px-5 py-3">Fecha</th><th class="px-5 py-3">Estado</th><th class="px-5 py-3 text-right">Total</th><th class="px-5 py-3 text-right">Acciones</th></tr>
+                    <tr>
+                        <th class="px-5 py-3">Número</th>
+                        <th class="px-5 py-3">Cliente</th>
+                        <th class="px-5 py-3">Fecha</th>
+                        <th class="px-5 py-3">Estado</th>
+                        <th class="px-5 py-3 text-right">Total</th>
+                        <th class="px-5 py-3 text-right">Acciones</th>
+                    </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 bg-white text-slate-600">
                     @forelse ($facturas as $factura)

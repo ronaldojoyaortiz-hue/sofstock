@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\FacturaRequest;
 use App\Models\Facturas;
 use App\Services\FacturaService;
 
@@ -14,54 +13,16 @@ class FacturaController extends Controller
 
     public function index()
     {
-        $facturas = $this->facturaService->listarTodo();
-
-        return view('facturas.index', compact('facturas'));
+        return view('facturas.index', [
+            'facturas' => $this->facturaService->listarTodo(),
+        ]);
     }
 
-    public function create()
+    public function show($id)
     {
-        $productos = $this->facturaService->productosDisponibles();
-
-        return view('detallefactura.create', compact('productos'));
-    }
-
-    public function store(FacturaRequest $request)
-    {
-        $factura = $this->facturaService->guardar($request->validated());
-
-        return redirect()->route('detallefacturas.index')
-            ->with('success', 'Factura creada correctamente.');
-    }
-
-    public function show(Facturas $factura)
-    {
+        $factura = $this->facturaService->buscar((int) $id);
         $factura->load('detalles.producto');
 
         return view('facturas.show', compact('factura'));
-    }
-
-    public function edit(Facturas $factura)
-    {
-        $factura = $this->facturaService->buscar($factura->id_factura);
-        $productos = $this->facturaService->productosDisponibles();
-
-        return view('detallefactura.edit', compact('factura', 'productos'));
-    }
-
-    public function update(FacturaRequest $request, Facturas $factura)
-    {
-        $this->facturaService->actualizar($factura, $request->validated());
-
-        return redirect()->route('detallefacturas.index')
-            ->with('success', 'Factura actualizada correctamente.');
-    }
-
-    public function destroy(Facturas $factura)
-    {
-        $this->facturaService->eliminar($factura);
-
-        return redirect()->route('detallefacturas.index')
-            ->with('success', 'Factura eliminada correctamente.');
     }
 }

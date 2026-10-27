@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'Panel principal') - {{ config('app.name', 'SofStock') }}</title>
+    <title>@yield('title', 'Inicio') - {{ config('app.name', 'SofStock') }}</title>
 
     {{-- Tailwind CSS. Reemplazar por tu build de Vite/PostCSS en producción (ver README). --}}
     <script src="https://cdn.tailwindcss.com"></script>

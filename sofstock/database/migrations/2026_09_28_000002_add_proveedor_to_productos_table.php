@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('productos', function (Blueprint $table) {
-            $table->integer('id_proveedor')->nullable()->after('id_categoria');
+            $table->foreignId('id_proveedor')->nullable()->after('id_categoria');
             $table->foreign('id_proveedor')
                 ->references('id_proveedor')
                 ->on('proveedores')

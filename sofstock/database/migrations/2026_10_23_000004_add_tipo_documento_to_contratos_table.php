@@ -1,0 +1,26 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        if (! Schema::hasColumn('contratos', 'tipo_documento_contraparte')) {
+            Schema::table('contratos', function (Blueprint $table) {
+                $table->string('tipo_documento_contraparte', 50)->nullable()->after('contraparte');
+            });
+        }
+    }
+
+    public function down(): void
+    {
+        if (Schema::hasColumn('contratos', 'tipo_documento_contraparte')) {
+            Schema::table('contratos', function (Blueprint $table) {
+                $table->dropColumn('tipo_documento_contraparte');
+            });
+        }
+    }
+};

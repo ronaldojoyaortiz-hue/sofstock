@@ -9,12 +9,11 @@ return new class extends Migration
     public function up(): void
     {
         $columnas = [
-            'nombre' => fn (Blueprint $table) => $table->string('nombre', 150)->nullable(),
-            'descripcion' => fn (Blueprint $table) => $table->text('descripcion')->nullable(),
-            // La relación se valida en la aplicación para mantener compatibilidad.
-            'id_categoria' => fn (Blueprint $table) => $table->unsignedBigInteger('id_categoria')->nullable(),
-            'stock_actual' => fn (Blueprint $table) => $table->decimal('stock_actual', 12, 2)->default(0),
-            'precio_base' => fn (Blueprint $table) => $table->decimal('precio_base', 12, 2)->default(0),
+            'nombre' => fn(Blueprint $table) => $table->string('nombre', 150)->nullable(),
+            'descripcion' => fn(Blueprint $table) => $table->text('descripcion')->nullable(),
+            'id_categoria' => fn(Blueprint $table) => $table->unsignedBigInteger('id_categoria')->nullable(),
+            'stock_actual' => fn(Blueprint $table) => $table->decimal('stock_actual', 12, 2)->default(0),
+            'precio_base' => fn(Blueprint $table) => $table->decimal('precio_base', 12, 2)->default(0),
         ];
 
         foreach ($columnas as $nombre => $agregarColumna) {
