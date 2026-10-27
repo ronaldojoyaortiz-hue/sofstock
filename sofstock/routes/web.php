@@ -10,6 +10,7 @@ use App\Http\Controllers\DetalleFacturaController;
 use App\Http\Controllers\ProveedorController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\UsuarioController;
+use App\Http\Controllers\InmobiliarioController;
 
 
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
@@ -25,3 +26,8 @@ Route::resource('facturas', FacturaController::class);
 Route::resource('detallefacturas', DetalleFacturaController::class);
 Route::resource('proveedores', ProveedorController::class);
 Route::resource('usuarios', UsuarioController::class);
+Route::get('/inmuebles/{inmueble}/archivos/{indice}', [InmobiliarioController::class, 'archivo'])
+    ->whereNumber(['inmueble', 'indice'])
+    ->middleware('auth')
+    ->name('inmuebles.archivos.show');
+Route::resource('inmuebles', InmobiliarioController::class);

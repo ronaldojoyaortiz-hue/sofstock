@@ -32,6 +32,7 @@
                     ['label' => 'Detalles de factura',  'route' => 'detallefacturas.index', 'icon' => 'chart'],
                     ['label' => 'Facturas',             'route' => 'facturas.index',        'icon' => 'chart'],
                     ['label' => 'Proveedores',          'route' => 'proveedores.index',     'icon' => 'users'],
+                    ['label' => 'Inmobiliarios',        'route' => 'inmuebles.index',       'icon' => 'home'],
                     ['label' => 'Reportes',             'route' => 'reports.index',         'icon' => 'chart'],
                     ['label' => 'Configuración',        'route' => 'settings.index',        'icon' => 'cog'],
                 ];
