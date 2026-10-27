@@ -156,7 +156,6 @@ return [
         'numero' => 'número de factura',
         'porcentaje_impuesto' => 'porcentaje de impuesto',
         'precio_base' => 'precio de venta',
-        'precio_compra' => 'precio de compra',
         'razon_social' => 'razón social',
         'stock_actual' => 'existencias',
         'telefono' => 'teléfono',

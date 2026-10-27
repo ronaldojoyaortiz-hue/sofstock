@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ $title ?? 'Panel principal' }} | SofStock - Plantilla del panel de administración</title>
+    <title>{{ $title ?? 'Inicio' }} | SofStock - Plantilla del panel de administración</title>
 
     <!-- Archivos de JavaScript -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])

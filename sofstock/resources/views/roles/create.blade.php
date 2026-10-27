@@ -7,7 +7,7 @@
 @section('content')
     <div class="mb-6">
         <h1 class="text-2xl font-bold text-slate-800">Nuevo rol</h1>
-        <p class="mt-1 text-sm text-slate-500">Crea un rol para asignar permisos a los usuarios.</p>
+        <p class="mt-1 text-sm text-slate-500">Crea un perfil para organizar a los usuarios.</p>
     </div>
 
     <x-card class="max-w-2xl">

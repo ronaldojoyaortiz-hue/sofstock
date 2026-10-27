@@ -10,7 +10,13 @@ class DetalleFactura extends Model
 
     protected $primaryKey = 'id_detalle_factura';
 
+    public function getRouteKeyName(): string
+    {
+        return 'id_detalle_factura';
+    }
+
     protected $fillable = [
+        'id_factura',
         'id_producto',
         'producto_nombre',
         'cantidad',

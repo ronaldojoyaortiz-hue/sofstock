@@ -13,7 +13,7 @@
             </button>
 
             <h1 class="text-lg sm:text-xl font-semibold text-slate-800 truncate">
-                @yield('page-title', 'Panel principal')
+                @yield('page-title', 'Inicio')
             </h1>
         </div>
 
@@ -49,13 +49,15 @@
                 </button>
 
                 <div
-                    x-show="open" x-cloak
+                    x-show="open"
+                    x-cloak
                     x-transition
                     class="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-slate-100 overflow-hidden"
                 >
                     <div class="px-4 py-3 border-b border-slate-100 font-semibold text-sm text-slate-700">
                         Notificaciones
                     </div>
+
                     <ul class="max-h-72 overflow-y-auto divide-y divide-slate-100">
                         @forelse (($notifications ?? []) as $notification)
                             <li class="px-4 py-3 text-sm hover:bg-slate-50">
@@ -63,7 +65,9 @@
                                 <p class="text-xs text-slate-400 mt-1">{{ $notification['time'] }}</p>
                             </li>
                         @empty
-                            <li class="px-4 py-6 text-sm text-slate-400 text-center">Sin notificaciones nuevas</li>
+                            <li class="px-4 py-6 text-sm text-slate-400 text-center">
+                                Sin notificaciones nuevas
+                            </li>
                         @endforelse
                     </ul>
                 </div>
@@ -81,31 +85,54 @@
                 >
                     <img
                         class="w-8 h-8 rounded-full object-cover ring-1 ring-slate-200"
-                        src="{{ auth()->user()->avatar_url ?? 'https://ui-avatars.com/api/?name=' . urlencode(auth()->user()->name ?? 'Admin') }}"
-                        alt="Avatar de {{ auth()->user()->name ?? 'Usuario' }}"
+                        src="{{ auth()->user()?->avatar_url ?? 'https://ui-avatars.com/api/?name=' . urlencode(auth()->user()?->nombre ?? 'Usuario') }}"
+                        alt="Avatar del usuario"
                     >
+
+                    {{-- Mostrar el rol en lugar del nombre --}}
                     <span class="hidden sm:block text-sm font-medium text-slate-700">
-                        {{ auth()->user()->name ?? 'Administrador' }}
+                        {{ auth()->user()?->rol?->nombre_rol ?? 'Sin rol asignado' }}
                     </span>
-                    <span class="w-4 h-4 text-slate-400 hidden sm:block">@include('layouts.partials.icons', ['icon' => 'chevron-down'])</span>
+
+                    <span class="w-4 h-4 text-slate-400 hidden sm:block">
+                        @include('layouts.partials.icons', ['icon' => 'chevron-down'])
+                    </span>
                 </button>
 
                 <div
-                    x-show="open" x-cloak
+                    x-show="open"
+                    x-cloak
                     x-transition
                     class="absolute right-0 mt-2 w-52 bg-white rounded-xl shadow-lg border border-slate-100 overflow-hidden py-1"
                 >
-                    <a href="{{ Route::has('profile.edit') ? route('profile.edit') : '#' }}" class="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50">Mi perfil</a>
-                    <a href="{{ Route::has('settings.index') ? route('settings.index') : '#' }}" class="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50">Configuración</a>
+                    <a
+                        href="{{ route('password.change') }}"
+                        class="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50"
+                    >
+                        Cambiar contraseña
+                    </a>
+
+                    <a
+                        href="{{ Route::has('settings.index') ? route('settings.index') : '#' }}"
+                        class="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50"
+                    >
+                        Configuración
+                    </a>
+
                     <hr class="my-1 border-slate-100">
+
                     <form method="POST" action="{{ Route::has('logout') ? route('logout') : '#' }}">
                         @csrf
-                        <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                        <button
+                            type="submit"
+                            class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                        >
                             Cerrar sesión
                         </button>
                     </form>
                 </div>
             </div>
+
         </div>
     </div>
 </header>

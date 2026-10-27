@@ -53,10 +53,6 @@
                     </th>
 
                     <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                        Precio compra
-                    </th>
-
-                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                         Stock
                     </th>
 
@@ -88,9 +84,6 @@
                         <td class="px-4 py-4">{{ $producto->descripcion ?: '—' }}</td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             ${{ number_format((float) $producto->precio_base, 2, ',', '.') }}
-                        </td>
-                        <td class="px-4 py-4 whitespace-nowrap">
-                            ${{ number_format((float) $producto->precio_compra, 2, ',', '.') }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             {{ number_format((float) $producto->stock_actual, 2, ',', '.') }}
@@ -174,7 +167,7 @@
 
                     <tr>
 
-                        <td colspan="10"
+                        <td colspan="9"
                             class="px-6 py-8 text-center text-slate-500">
 
                             No hay productos registrados.

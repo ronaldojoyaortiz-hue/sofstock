@@ -61,7 +61,7 @@ class FacturaService
             $datos['numero'] = 'FAC-' . now()->format('YmdHis') . '-' . random_int(1000, 9999);
         }
 
-        $detalles = $datos['detalles'];
+        $detalles = $datos['detalles'] ?? [];
         $subtotal = 0;
         $descuento = 0;
         $impuesto = 0;
@@ -87,7 +87,7 @@ class FacturaService
             $impuesto += $impuestoDetalle;
 
             $detallesPreparados[] = [
-                'id_producto' => $detalle['id_producto'],
+                'id_producto' => $detalle['id_producto'] ?? null,
                 'producto_nombre' => $producto?->nombre ?? ($detalle['producto_nombre'] ?? ''),
                 'cantidad' => $cantidad,
                 'precio_unitario' => $precioUnitario,

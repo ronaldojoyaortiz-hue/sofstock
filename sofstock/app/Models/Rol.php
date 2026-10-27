@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Rol extends Model
 {
@@ -18,13 +18,8 @@ class Rol extends Model
         'descripcion',
     ];
 
-    public function permisos(): BelongsToMany
+    public function usuarios(): HasMany
     {
-        return $this->belongsToMany(
-            Permiso::class,
-            'permiso_rol',
-            'id_rol',
-            'id_permiso'
-        )->withTimestamps();
+        return $this->hasMany(Usuario::class, 'id_rol', 'id_rol');
     }
 }

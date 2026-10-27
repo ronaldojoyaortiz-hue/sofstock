@@ -12,7 +12,7 @@
     </h1>
 
     <p class="mt-1 text-sm text-slate-500">
-        Gestiona los roles de usuario y sus permisos.
+        Gestiona los perfiles asignados a los usuarios.
     </p>
 
 </div>

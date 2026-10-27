@@ -35,7 +35,6 @@ class ProductoCamposTest extends TestCase
             $table->decimal('stock_minimo', 12, 2)->default(0);
             $table->string('unidad_base')->nullable();
             $table->decimal('precio_base', 12, 2)->default(0);
-            $table->decimal('precio_compra', 12, 2)->default(0);
             $table->boolean('activo')->default(true);
             $table->timestamp('fecha_registro')->nullable();
             $table->timestamp('fecha_actualizacion')->nullable();
@@ -51,9 +50,13 @@ class ProductoCamposTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_crear_y_listar_producto_con_marca_precio_de_compra_y_estado(): void
+    public function test_crear_y_listar_producto_con_marca_y_estado(): void
     {
         $categoriaId = $this->crearCategoria();
+
+        $this->get(route('productos.create'))
+            ->assertOk()
+            ->assertDontSee('Precio compra');
 
         $this->post(route('productos.store'), [
             'nombre' => 'Teclado',
@@ -69,14 +72,14 @@ class ProductoCamposTest extends TestCase
 
         $producto = Producto::firstOrFail();
         $this->assertSame('SofTech', $producto->marca);
-        $this->assertSame('75.00', $producto->precio_compra);
+        $this->assertArrayNotHasKey('precio_compra', $producto->getAttributes());
         $this->assertTrue($producto->activo);
 
         $this->get(route('productos.index'))
             ->assertOk()
             ->assertSee('ID')
             ->assertSee('Descripción')
-            ->assertSee('Precio compra')
+            ->assertDontSee('Precio compra')
             ->assertSee('Stock')
             ->assertSee('Marca')
             ->assertSee('Estado')
@@ -84,7 +87,7 @@ class ProductoCamposTest extends TestCase
             ->assertSee('Activo');
     }
 
-    public function test_editar_producto_puede_actualizar_marca_precio_de_compra_y_desactivarlo(): void
+    public function test_editar_producto_puede_actualizar_marca_y_desactivarlo(): void
     {
         $categoriaId = $this->crearCategoria();
         $producto = Producto::create([
@@ -92,7 +95,6 @@ class ProductoCamposTest extends TestCase
             'id_categoria' => $categoriaId,
             'stock_actual' => 3,
             'precio_base' => 50,
-            'precio_compra' => 25,
             'activo' => true,
         ]);
 
@@ -103,7 +105,6 @@ class ProductoCamposTest extends TestCase
             'id_categoria' => $categoriaId,
             'stock_actual' => 5,
             'precio_base' => 60,
-            'precio_compra' => 30,
             'activo' => 0,
         ])->assertRedirect(route('productos.index'))
             ->assertSessionHasNoErrors();
@@ -111,9 +112,12 @@ class ProductoCamposTest extends TestCase
         $this->assertDatabaseHas('productos', [
             'id' => $producto->id,
             'marca' => 'SofTech',
-            'precio_compra' => '30.00',
             'activo' => 0,
         ]);
+
+        $this->get(route('productos.edit', $producto->id))
+            ->assertOk()
+            ->assertDontSee('Precio compra');
     }
 
     private function crearCategoria(): int
