@@ -5,8 +5,10 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use App\Observers\AuditoriaObserver;
 use App\Models\Categoria;
+use App\Models\Contrato;
 use App\Models\DetalleFactura;
 use App\Models\Facturas;
+use App\Models\Inmobiliario;
 use App\Models\Producto;
 use App\Models\Proveedores;
 use App\Models\Rol;
@@ -23,8 +25,10 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Categoria::observe(AuditoriaObserver::class);
+        Contrato::observe(AuditoriaObserver::class);
         DetalleFactura::observe(AuditoriaObserver::class);
         Facturas::observe(AuditoriaObserver::class);
+        Inmobiliario::observe(AuditoriaObserver::class);
         Producto::observe(AuditoriaObserver::class);
         Proveedores::observe(AuditoriaObserver::class);
         Rol::observe(AuditoriaObserver::class);
