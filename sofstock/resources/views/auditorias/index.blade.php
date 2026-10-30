@@ -92,9 +92,11 @@
 
                             <td class="whitespace-nowrap px-4 py-3 text-center">
                                 <a
-                                    href="{{ route('auditoria.show', $auditoria->id_auditoria) }}"
-                                    class="inline-flex rounded-lg bg-blue-700 px-3 py-2 text-sm font-medium text-white transition hover:bg-blue-800">
-                                    Ver detalle
+                                    href="{{ route('auditorias.show', $auditoria->id_auditoria) }}"
+                                    class="inline-flex rounded-md bg-slate-100 p-2 text-slate-700 transition hover:bg-slate-200 hover:text-slate-900"
+                                    title="Ver detalle"
+                                    aria-label="Ver detalle de auditoría">
+                                    <span class="block h-5 w-5" aria-hidden="true">@include('layouts.partials.icons', ['icon' => 'eye'])</span>
                                 </a>
                             </td>
 

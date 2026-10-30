@@ -259,4 +259,5 @@
             @endif
         </div>
     </x-card>
+
 @endsection

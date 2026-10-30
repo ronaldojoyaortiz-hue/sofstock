@@ -16,10 +16,13 @@ class FacturaRequest extends FormRequest
     public function rules(): array
     {
         /** @var Facturas|null $factura */
-        $factura = $this->route('factura');
+        $factura = $this->route('detallefactura') ?? $this->route('factura');
+        $facturaId = $factura instanceof Facturas
+            ? $factura->id_factura
+            : $factura;
 
         return [
-            'numero' => ['nullable', 'string', 'max:30', Rule::unique('facturas', 'numero')->ignore($factura?->id_factura, 'id_factura')],
+            'numero' => ['nullable', 'string', 'max:30', Rule::unique('facturas', 'numero')->ignore($facturaId, 'id_factura')],
             'cliente_nombre' => ['required', 'string', 'max:150'],
             'cliente_documento' => ['nullable', 'string', 'max:30'],
             'fecha' => ['required', 'date'],
@@ -29,7 +32,7 @@ class FacturaRequest extends FormRequest
             'detalles' => ['required', 'array', 'min:1'],
             'detalles.*.id_producto' => ['required', 'integer', 'exists:productos,id'],
             'detalles.*.producto_nombre' => ['nullable', 'string', 'max:150'],
-            'detalles.*.cantidad' => ['nullable', 'numeric', 'min:0'],
+            'detalles.*.cantidad' => ['required', 'numeric', 'gt:0'],
             'detalles.*.precio_unitario' => ['nullable', 'numeric', 'gte:0'],
             'detalles.*.porcentaje_impuesto' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'detalles.*.descuento' => ['nullable', 'numeric', 'min:0'],

@@ -39,13 +39,19 @@
                             <td class="px-5 py-4">{{ $contrato->fecha_inicio->format('d/m/Y') }} – {{ $contrato->fecha_fin?->format('d/m/Y') ?? 'Abierto' }}</td>
                             <td class="px-5 py-4"><span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">{{ $contrato->estado }}</span></td>
                             <td class="px-5 py-4">
-                                <div class="flex justify-end gap-3">
-                                    <a class="font-medium text-primary-600 hover:text-primary-800" href="{{ route('inmuebles.contratos.show', [$inmobiliario->id_inmueble, $contrato->id_contrato]) }}">Ver</a>
-                                    <a class="font-medium text-blue-600 hover:text-blue-800" href="{{ route('inmuebles.contratos.edit', [$inmobiliario->id_inmueble, $contrato->id_contrato]) }}">Editar</a>
+                                <div class="flex justify-end items-center gap-2">
+                                    <a class="rounded-md bg-slate-100 p-2 text-slate-700 hover:bg-slate-200 hover:text-slate-900" title="Ver contrato" aria-label="Ver contrato" href="{{ route('inmuebles.contratos.show', [$inmobiliario->id_inmueble, $contrato->id_contrato]) }}">
+                                        <span class="block h-5 w-5" aria-hidden="true">@include('layouts.partials.icons', ['icon' => 'eye'])</span>
+                                    </a>
+                                    <a class="rounded-md p-2 text-blue-600 hover:bg-blue-50 hover:text-blue-800" title="Editar contrato" aria-label="Editar contrato" href="{{ route('inmuebles.contratos.edit', [$inmobiliario->id_inmueble, $contrato->id_contrato]) }}">
+                                        <span class="block h-5 w-5" aria-hidden="true">@include('layouts.partials.icons', ['icon' => 'pencil'])</span>
+                                    </a>
                                     <form action="{{ route('inmuebles.contratos.destroy', [$inmobiliario->id_inmueble, $contrato->id_contrato]) }}" method="POST" onsubmit="return confirm('¿Deseas eliminar este contrato?')">
                                         @csrf
                                         @method('DELETE')
-                                        <button class="font-medium text-red-600 hover:text-red-800" type="submit">Eliminar</button>
+                                        <button class="rounded-md p-2 text-red-600 hover:bg-red-50 hover:text-red-800" type="submit" title="Eliminar contrato" aria-label="Eliminar contrato">
+                                            <span class="block h-5 w-5" aria-hidden="true">@include('layouts.partials.icons', ['icon' => 'trash'])</span>
+                                        </button>
                                     </form>
                                 </div>
                             </td>

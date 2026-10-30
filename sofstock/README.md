@@ -32,14 +32,20 @@ proveedores, usuarios, roles y facturas.
    php artisan migrate
    ```
 
-4. Instala las dependencias del frontend e inicia Vite:
+4. Crea y asigna los permisos de seguridad a los roles existentes:
+
+   ```bash
+   php artisan db:seed --class=SeguridadSeeder
+   ```
+
+5. Instala las dependencias del frontend e inicia Vite:
 
    ```bash
    npm install
    npm run dev
    ```
 
-5. Inicia el servidor local:
+6. Inicia el servidor local:
 
    ```bash
    php artisan serve

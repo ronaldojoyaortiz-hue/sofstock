@@ -27,20 +27,29 @@
                     ['label' => 'Inicio',               'route' => 'dashboard.index',       'icon' => 'home'],
                     ['label' => 'Usuarios',             'route' => 'usuarios.index',       'icon' => 'users'],
                     ['label' => 'Perfiles/Roles',       'route' => 'roles.index',           'icon' => 'shield'],
+                    ['label' => 'Gestionar permisos',   'route' => 'seguridad.permisos.index', 'icon' => 'shield', 'can' => 'gestionar seguridad'],
                     ['label' => 'Categorías',           'route' => 'categorias.index',      'icon' => 'tag'],
                     ['label' => 'Productos',            'route' => 'productos.index',       'icon' => 'box'],
-                    ['label' => 'Detalles de factura',  'route' => 'detallefacturas.index', 'icon' => 'chart'],
+                    ['label' => 'Detalles de factura',  'route' => 'detallefacturas.index', 'icon' => 'chart', 'can' => 'ver facturas'],
                     ['label' => 'Facturas',             'route' => 'facturas.index',        'icon' => 'chart'],
                     ['label' => 'Proveedores',          'route' => 'proveedores.index',     'icon' => 'users'],
                     ['label' => 'Inmobiliarios',        'route' => 'inmuebles.index',       'icon' => 'home'],
                     ['label' => 'Contratos',            'route' => 'contratos.index',       'icon' => 'history'],
                     ['label' => 'Reportes',             'route' => 'reports.index',         'icon' => 'chart'],
-                    ['label' => 'Auditorías',           'route' => 'auditoria.index',       'icon' => 'history'],
+                    ['label' => 'Auditorías',           'route' => 'auditorias.index',      'icon' => 'history'],
                     ['label' => 'Configuración',        'route' => 'settings.index',        'icon' => 'cog'],
                 ];
             @endphp
 
             @foreach ($links as $link)
+                @php
+                    $permissionModule = explode('.', $link['route'])[0];
+                    $permissionModule = $permissionModule === 'auditoria' ? 'auditorias' : $permissionModule;
+                    $requiredPermission = $link['can'] ?? ('ver ' . $permissionModule);
+                    $nombreRol = mb_strtolower(trim(auth()->user()->rol?->nombre_rol ?? ''));
+                    $esAdministrador = $nombreRol === 'administrador' || auth()->user()->hasRole('administrador');
+                @endphp
+                @continue(! auth()->user()->can($requiredPermission) && ! $esAdministrador)
                 @php
                     $active = Route::has($link['route']) && (
                         $link['route'] === 'home'

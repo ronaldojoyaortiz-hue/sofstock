@@ -28,8 +28,6 @@ class FacturaService
 
     public function guardar(array $datos): Facturas
     {
-        $datos['fecha'] = now()->toDateString();
-
         return DB::transaction(function () use ($datos) {
             [$cabecera, $detalles] = $this->prepararDatos($datos);
             $factura = $this->facturaRepository->guardar($cabecera);
