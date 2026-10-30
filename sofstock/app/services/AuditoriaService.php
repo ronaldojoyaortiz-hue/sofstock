@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Auditoria;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -19,14 +20,15 @@ class AuditoriaService
         int|string|null $idRegistro = null,
         ?array $datosAnteriores = null,
         ?array $datosNuevos = null,
-        ?string $motivo = null
+        ?string $motivo = null,
+        ?int $idUsuario = null
     ): Auditoria {
         $request = request();
 
         $usuario = Auth::user();
 
         return Auditoria::create([
-            'id_usuario' => $usuario?->getAuthIdentifier(),
+            'id_usuario' => $idUsuario ?? $usuario?->getAuthIdentifier(),
 
             'accion' => $accion,
             'modulo' => $modulo,
@@ -66,18 +68,38 @@ class AuditoriaService
             return null;
         }
 
-        $camposSensibles = [
-            'contrasena',
-            'password',
-            'password_confirmation',
-            'remember_token',
-            'token',
-        ];
+        return $this->sanitizar($datos);
+    }
 
-        foreach ($camposSensibles as $campo) {
-            unset($datos[$campo]);
+    private function sanitizar(array $datos): array
+    {
+        $seguros = [];
+
+        foreach ($datos as $campo => $valor) {
+            $nombreCampo = mb_strtolower((string) $campo);
+            if (
+                str_contains($nombreCampo, 'password') ||
+                str_contains($nombreCampo, 'contrasena') ||
+                str_contains($nombreCampo, 'token') ||
+                str_contains($nombreCampo, 'secret') ||
+                $nombreCampo === 'clave'
+            ) {
+                continue;
+            }
+
+            if ($valor instanceof UploadedFile) {
+                $seguros[$campo] = [
+                    'archivo' => $valor->getClientOriginalName(),
+                    'tipo' => $valor->getClientMimeType(),
+                    'bytes' => $valor->getSize(),
+                ];
+            } elseif (is_array($valor)) {
+                $seguros[$campo] = $this->sanitizar($valor);
+            } elseif (is_scalar($valor) || $valor === null) {
+                $seguros[$campo] = $valor;
+            }
         }
 
-        return $datos;
+        return $seguros;
     }
 }
