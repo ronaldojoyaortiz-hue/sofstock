@@ -37,6 +37,7 @@
         />
     </div>
 
+
     {{-- Gráficos --}}
     <div class="mt-6 grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6">
 

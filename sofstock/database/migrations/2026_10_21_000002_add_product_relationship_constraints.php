@@ -9,41 +9,46 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (DB::connection()->getDriverName() !== 'mysql') {
+            throw new RuntimeException('This migration requires MySQL to normalize relationship columns.');
+        }
+
         if (Schema::hasColumn('productos', 'id_proveedor') && Schema::hasColumn('proveedores', 'id_proveedor')) {
-            $tipoIdProveedor = Schema::getColumnType('proveedores', 'id_proveedor');
+            $this->normalizeAndAddForeignKey(
+                'proveedores',
+                'id_proveedor',
+                'productos_id_proveedor_foreign'
+            );
+        }
 
-            Schema::table('productos', function (Blueprint $table) use ($tipoIdProveedor) {
-                if ($tipoIdProveedor === 'integer') {
-                    $table->unsignedInteger('id_proveedor')->nullable()->change();
-                } elseif ($tipoIdProveedor === 'bigint') {
-                    $table->unsignedBigInteger('id_proveedor')->nullable()->change();
-                }
+        if (Schema::hasColumn('productos', 'id_categoria') && Schema::hasColumn('categorias', 'id_categoria')) {
+            $this->normalizeAndAddForeignKey(
+                'categorias',
+                'id_categoria',
+                'productos_id_categoria_foreign'
+            );
+        }
+    }
+
+    private function normalizeAndAddForeignKey(string $parentTable, string $column, string $foreignKey): void
+    {
+        if ($this->hasForeignKey('productos', $foreignKey)) {
+            Schema::table('productos', function (Blueprint $table) use ($foreignKey) {
+                $table->dropForeign($foreignKey);
             });
         }
 
-        Schema::table('productos', function (Blueprint $table) {
-            if (Schema::hasColumn('productos', 'id_proveedor') && $this->hasForeignKey('productos', 'productos_id_proveedor_foreign')) {
-                $table->dropForeign('productos_id_proveedor_foreign');
-            }
+        // The parent migrations define these IDs as unsigned BIGINTs. Normalize both
+        // columns because existing databases may have been created with older INTs.
+        DB::statement("ALTER TABLE `{$parentTable}` MODIFY `{$column}` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT");
+        DB::statement("ALTER TABLE `productos` MODIFY `{$column}` BIGINT UNSIGNED NULL");
+
+        Schema::table('productos', function (Blueprint $table) use ($parentTable, $column, $foreignKey) {
+            $table->foreign($column, $foreignKey)
+                ->references($column)
+                ->on($parentTable)
+                ->nullOnDelete();
         });
-
-        if (Schema::hasColumn('productos', 'id_proveedor') && ! $this->hasForeignKey('productos', 'productos_id_proveedor_foreign')) {
-            Schema::table('productos', function (Blueprint $table) {
-                $table->foreign('id_proveedor', 'productos_id_proveedor_foreign')
-                    ->references('id_proveedor')
-                    ->on('proveedores')
-                    ->nullOnDelete();
-            });
-        }
-
-        if (Schema::hasColumn('productos', 'id_categoria') && ! $this->hasForeignKey('productos', 'productos_id_categoria_foreign')) {
-            Schema::table('productos', function (Blueprint $table) {
-                $table->foreign('id_categoria', 'productos_id_categoria_foreign')
-                    ->references('id_categoria')
-                    ->on('categorias')
-                    ->nullOnDelete();
-            });
-        }
     }
 
     public function down(): void

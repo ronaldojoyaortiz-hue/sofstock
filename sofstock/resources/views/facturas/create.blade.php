@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Editar factura')
-@section('page-title', 'Editar factura')
+@section('title', 'Nueva factura')
+@section('page-title', 'Nueva factura')
 
 @section('content')
     @php
@@ -10,21 +10,12 @@
             'nombre' => $producto->nombre,
             'precio_base' => (float) $producto->precio_base,
         ])->values()->all();
-
-        $detallesIniciales = $factura->detalles->map(function ($detalle) {
-            return [
-                'id_producto' => (string) ($detalle->id_producto ?? ''),
-                'cantidad' => (float) ($detalle->cantidad ?? 1),
-                'precio_unitario' => (float) ($detalle->precio_unitario ?? 0),
-                'subtotal' => (float) ($detalle->subtotal ?? 0),
-            ];
-        })->values()->all();
     @endphp
 
-    <h1 class="mb-6 text-2xl font-bold text-slate-800">Editar factura #{{ $factura->id_factura }}</h1>
+    <h1 class="mb-6 text-2xl font-bold text-slate-800">Nueva factura</h1>
     <x-card>
-        <form action="{{ route('detallefacturas.update', ['detallefactura' => $factura->id_factura]) }}" method="POST" class="space-y-6">
-            @csrf @method('PUT')
+        <form action="{{ route('detallefacturas.store') }}" method="POST" class="space-y-6">
+            @csrf
             @if ($errors->any())
                 <div class="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
                     <ul class="list-inside list-disc">
@@ -36,22 +27,21 @@
             @endif
 
             <div class="grid gap-4 md:grid-cols-2">
-                <x-input name="fecha" type="date" label="Fecha" :value="old('fecha', $factura->fecha->format('Y-m-d'))" required />
-                <x-input name="cliente_nombre" label="Nombre del cliente" :value="old('cliente_nombre', $factura->cliente_nombre)" required />
-                <x-input name="cliente_documento" label="Documento del cliente" :value="old('cliente_documento', $factura->cliente_documento)" />
-                <x-input name="descuento" type="number" step="0.01" min="0" label="Descuento total" :value="old('descuento', $factura->descuento)" />
+                <x-input name="fecha" type="date" label="Fecha" :value="old('fecha', now()->format('Y-m-d'))" required />
+                <x-input name="cliente_nombre" label="Nombre del cliente" :value="old('cliente_nombre')" required />
+                <x-input name="cliente_documento" label="Documento del cliente" :value="old('cliente_documento')" />
                 <div>
                     <label class="mb-1.5 block text-sm font-medium text-slate-700">Estado</label>
                     <select name="estado" class="w-full rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm">
-                        @foreach (['borrador', 'emitida', 'pagada', 'anulada'] as $estado)
-                            <option value="{{ $estado }}" @selected(old('estado', $factura->estado) === $estado)>{{ ucfirst($estado) }}</option>
+                        @foreach (['emitida', 'pagada'] as $estado)
+                            <option value="{{ $estado }}" @selected(old('estado', 'emitida') === $estado)>{{ ucfirst($estado) }}</option>
                         @endforeach
                     </select>
                 </div>
             </div>
 
             <div class="space-y-4">
-                <h2 class="mb-3 font-semibold text-slate-800">Productos de la factura</h2>
+                <h2 class="font-semibold text-slate-800">Productos de la factura</h2>
                 <div id="detalle-factura-container" class="space-y-3"></div>
                 <button id="add-product-row" type="button" class="rounded-lg border border-dashed border-slate-300 px-3 py-2 text-sm font-medium text-slate-600 hover:border-slate-400 hover:text-slate-800">+ Agregar producto</button>
             </div>
@@ -71,18 +61,17 @@
 
             <div>
                 <label class="mb-1.5 block text-sm font-medium text-slate-700">Observaciones</label>
-                <textarea name="observaciones" rows="3" class="w-full rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm">{{ old('observaciones', $factura->observaciones) }}</textarea>
+                <textarea name="observaciones" rows="3" class="w-full rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm">{{ old('observaciones') }}</textarea>
             </div>
 
             <div class="ml-auto max-w-xs space-y-2 text-sm text-slate-700">
                 <div class="flex items-center justify-between"><span>Subtotal:</span><strong id="resumen-subtotal" class="text-slate-900">$0</strong></div>
-                <div class="flex items-center justify-between"><span>Descuento:</span><strong id="resumen-descuento" class="text-slate-900">$0</strong></div>
                 <div class="flex items-center justify-between border-t border-slate-200 pt-2 text-base font-semibold text-slate-900"><span>TOTAL:</span><strong id="resumen-total">$0</strong></div>
             </div>
 
             <div class="flex justify-end gap-3">
                 <x-button variant="secondary" href="{{ route('detallefacturas.index') }}">Cancelar</x-button>
-                <x-button type="submit">Actualizar factura</x-button>
+                <x-button type="submit">Guardar factura</x-button>
             </div>
         </form>
     </x-card>
@@ -92,7 +81,6 @@
             const products = @json($productosMap);
             const container = document.getElementById('detalle-factura-container');
             const addButton = document.getElementById('add-product-row');
-            const existingRows = @json($detallesIniciales);
             let rowIndex = 0;
 
             const formatCurrency = (value) => {
@@ -142,8 +130,10 @@
 
                 const removeButton = document.createElement('button');
                 removeButton.type = 'button';
-                removeButton.textContent = 'Eliminar';
-                removeButton.className = 'ml-auto mt-2 text-xs font-medium text-red-600 hover:text-red-700';
+                removeButton.innerHTML = '<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>';
+                removeButton.className = 'ml-auto mt-2 rounded-md p-2 text-red-600 hover:bg-red-50 hover:text-red-700';
+                removeButton.title = 'Quitar producto';
+                removeButton.setAttribute('aria-label', 'Quitar producto de la factura');
                 removeButton.addEventListener('click', () => {
                     row.remove();
                     updateSummary();
@@ -199,22 +189,12 @@
                     subtotal += lineSubtotal;
                 });
 
-                const descuentoInput = document.querySelector('[name="descuento"]');
-                const descuento = Number(descuentoInput?.value || 0);
                 document.getElementById('resumen-subtotal').textContent = formatCurrency(subtotal);
-                document.getElementById('resumen-descuento').textContent = formatCurrency(descuento);
-                document.getElementById('resumen-total').textContent = formatCurrency(Math.max(subtotal - descuento, 0));
+                document.getElementById('resumen-total').textContent = formatCurrency(subtotal);
             };
 
             addButton.addEventListener('click', () => buildRow());
-            document.querySelector('[name="descuento"]').addEventListener('input', updateSummary);
-
-            if (Array.isArray(existingRows) && existingRows.length > 0) {
-                existingRows.forEach((rowData) => buildRow(rowData));
-            } else {
-                buildRow();
-            }
-
+            buildRow();
             updateSummary();
         });
     </script>

@@ -9,7 +9,12 @@
             <h1 class="text-2xl font-bold text-slate-800">Factura #{{ $factura->numero ?? $factura->id_factura }}</h1>
             <p class="mt-1 text-sm text-slate-500">#{{ $factura->numero ?? $factura->id_factura }}</p>
         </div>
-        <x-button href="{{ route('facturas.index') }}">Volver a facturas</x-button>
+        <div class="flex gap-2">
+            <x-button variant="secondary" href="{{ route('facturas.index') }}">Volver a facturas</x-button>
+            @if ($factura->estado !== 'pagada')
+                <x-button href="{{ route('detallefacturas.edit', $factura->id_factura) }}">Editar factura</x-button>
+            @endif
+        </div>
     </div>
 
     <x-card>

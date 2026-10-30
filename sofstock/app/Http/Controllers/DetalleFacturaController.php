@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Requests\FacturaRequest;
 use App\Models\Facturas;
 use App\Services\FacturaService;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\View\View;
 
 class DetalleFacturaController extends Controller
 {
@@ -12,58 +14,59 @@ class DetalleFacturaController extends Controller
     {
     }
 
-    public function index()
+    public function index(): View
     {
-        return view('factura.index', [
+        return view('facturas.detalle-index', [
             'facturas' => $this->facturaService->listarTodo(),
         ]);
     }
 
-    public function create()
+    public function create(): View
     {
-        return view('factura.create', [
+        return view('facturas.create', [
             'productos' => $this->facturaService->productosDisponibles(),
         ]);
     }
 
-    public function store(FacturaRequest $request)
+    public function store(FacturaRequest $request): RedirectResponse
     {
-        $this->facturaService->guardar($request->validated());
+        $factura = $this->facturaService->guardar($request->validated());
 
-        return redirect()->route('detallefacturas.index')
+        return redirect()->route('facturas.show', $factura->id_factura)
             ->with('success', 'Factura creada correctamente.');
     }
 
-    public function show($id)
+    public function edit(Facturas $detallefactura): View|RedirectResponse
     {
-        $factura = $this->facturaService->buscar((int) $id);
-        $factura->load('detalles.producto');
+        if ($detallefactura->estado === 'pagada') {
+            return redirect()->route('facturas.show', $detallefactura->id_factura)
+                ->with('error', 'No se puede editar una factura pagada.');
+        }
 
-        return view('detallefacturas.show', compact('factura'));
+        $detallefactura->load('detalles.producto');
+
+        return view('facturas.edit', [
+            'factura' => $detallefactura,
+            'productos' => $this->facturaService->productosDisponibles(),
+        ]);
     }
 
-    public function edit($id)
+    public function update(FacturaRequest $request, Facturas $detallefactura): RedirectResponse
     {
-        $factura = $this->facturaService->buscar((int) $id);
-        $factura->load('detalles.producto');
-        $productos = $this->facturaService->productosDisponibles();
+        if ($detallefactura->estado === 'pagada') {
+            return redirect()->route('facturas.show', $detallefactura->id_factura)
+                ->with('error', 'No se puede editar una factura pagada.');
+        }
 
-        return view('factura.edit', compact('factura', 'productos'));
-    }
+        $this->facturaService->actualizar($detallefactura, $request->validated());
 
-    public function update(FacturaRequest $request, $id)
-    {
-        $factura = $this->facturaService->buscar((int) $id);
-        $this->facturaService->actualizar($factura, $request->validated());
-
-        return redirect()->route('detallefacturas.index')
+        return redirect()->route('facturas.show', $detallefactura->id_factura)
             ->with('success', 'Factura actualizada correctamente.');
     }
 
-    public function destroy($id)
+    public function destroy(Facturas $detallefactura): RedirectResponse
     {
-        $factura = $this->facturaService->buscar((int) $id);
-        $this->facturaService->eliminar($factura);
+        $this->facturaService->eliminar($detallefactura);
 
         return redirect()->route('detallefacturas.index')
             ->with('success', 'Factura eliminada correctamente.');

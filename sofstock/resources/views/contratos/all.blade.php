@@ -53,10 +53,12 @@
                             </td>
                             <td class="px-5 py-4 text-right">
                                 <a
-                                    class="font-medium text-primary-600 hover:text-primary-800"
+                                    class="inline-flex rounded-md bg-slate-100 p-2 text-slate-700 hover:bg-slate-200 hover:text-slate-900"
                                     href="{{ route('inmuebles.contratos.show', [$contrato->id_inmueble, $contrato->id_contrato]) }}"
+                                    title="Ver contrato"
+                                    aria-label="Ver contrato"
                                 >
-                                    Ver contrato
+                                    <span class="block h-5 w-5" aria-hidden="true">@include('layouts.partials.icons', ['icon' => 'eye'])</span>
                                 </a>
                             </td>
                         </tr>

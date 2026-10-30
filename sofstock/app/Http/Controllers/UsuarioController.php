@@ -4,43 +4,61 @@ namespace App\Http\Controllers;
 
 use App\Models\Usuario;
 use App\Models\Rol;
-use Illuminate\Validation\Rule;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Contracts\Encryption\DecryptException;
+use Illuminate\Support\Facades\Rule;
 use Illuminate\Support\Str;
-use Illuminate\Http\Request;
 
 class UsuarioController extends Controller
 {
     private const TIPOS_DOCUMENTO = [
-        'Tarjeta de identidad',
-        'Cédula de ciudadanía',
-        'Cédula de extranjería',
-        'Pasaporte',
+        'CC',
+        'CE',
+        'TI',
+        'PAS',
+        'NIT',
     ];
 
     private const GENEROS = [
         'Masculino',
         'Femenino',
-        'No binario',
         'Otro',
-        'Prefiero no responder',
     ];
 
-    /**
-     * Mostrar el listado de usuarios.
-     */
+    private function esAdministrador(): bool
+    {
+        return strtolower(
+            auth()->user()?->rol?->nombre_rol ?? ''
+        ) === 'administrador';
+    }
+
+    private function autorizarUsuario($id): void
+    {
+        if ($this->esAdministrador()) {
+            return;
+        }
+
+        abort_unless(
+            (string) $id === (string) auth()->id(),
+            403
+        );
+    }
+
     public function index()
     {
-        $usuarios = Usuario::with('rol')->paginate(15);
+        if ($this->esAdministrador()) {
+            $usuarios = Usuario::with('rol')->paginate(15);
+        } else {
+            $usuarios = Usuario::with('rol')
+                ->where('id', auth()->id())
+                ->paginate(15);
+        }
 
         return view('usuario.index', compact('usuarios'));
     }
 
-    /**
-     * Mostrar el formulario para crear un usuario.
-     */
     public function create()
     {
         $roles = Rol::orderBy('nombre_rol')->get();
@@ -52,9 +70,6 @@ class UsuarioController extends Controller
         ]);
     }
 
-    /**
-     * Guardar un usuario recién creado.
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -66,16 +81,27 @@ class UsuarioController extends Controller
                 'max:150',
                 'unique:usuarios,correo',
             ],
-            'telefono' => ['nullable', 'string', 'max:30'],
+            'telefono' => ['nullable', 'string', 'max:20'],
             'direccion' => ['nullable', 'string', 'max:255'],
-            'genero' => ['nullable', 'string', Rule::in(self::GENEROS)],
-            'genero_detalle' => ['nullable', 'string', 'max:100'],
-            'tipo_documento' => [
+            'genero' => [
+                'nullable',
+                Rule::in(self::GENEROS),
+            ],
+            'genero_detalle' => [
                 'nullable',
                 'string',
+                'max:100',
+            ],
+            'tipo_documento' => [
+                'nullable',
                 Rule::in(self::TIPOS_DOCUMENTO),
             ],
-            'documento' => ['nullable', 'string', 'max:50'],
+            'documento' => [
+                'nullable',
+                'string',
+                'max:30',
+                'unique:usuarios,documento',
+            ],
             'contrasena' => [
                 'required',
                 'string',
@@ -84,7 +110,6 @@ class UsuarioController extends Controller
             ],
             'id_rol' => [
                 'required',
-                'integer',
                 'exists:roles,id_rol',
             ],
             'activo' => ['nullable', 'boolean'],
@@ -92,14 +117,13 @@ class UsuarioController extends Controller
 
         $contrasenaOriginal = $validated['contrasena'];
 
-        // Hash para la autenticación.
         $validated['contrasena'] = Hash::make($contrasenaOriginal);
-
-        // Copia cifrada para consulta autorizada.
-        $validated['contrasena_cifrada'] =
-            Crypt::encryptString($contrasenaOriginal);
+        $validated['contrasena_cifrada'] = Crypt::encryptString(
+            $contrasenaOriginal
+        );
 
         $validated['activo'] = $request->boolean('activo');
+
         if (($validated['genero'] ?? null) !== 'Otro') {
             $validated['genero_detalle'] = null;
         }
@@ -108,41 +132,44 @@ class UsuarioController extends Controller
 
         return redirect()
             ->route('usuarios.index')
-            ->with('success', 'Usuario creado exitosamente.');
+            ->with('success', 'Usuario creado correctamente.');
     }
 
-    /**
-     * Mostrar el detalle de un usuario.
-     */
-    public function show(string $id)
+    public function show($id)
     {
+        $this->autorizarUsuario($id);
+
         $usuario = Usuario::with('rol')->findOrFail($id);
 
         $contrasenaVisible = null;
 
-        if ($usuario->contrasena_cifrada) {
+        if (!empty($usuario->contrasena_cifrada)) {
             try {
                 $contrasenaVisible = Crypt::decryptString(
                     $usuario->contrasena_cifrada
                 );
-            } catch (DecryptException $e) {
+            } catch (DecryptException $exception) {
                 $contrasenaVisible = null;
             }
         }
 
-        return view('usuario.show', compact(
-            'usuario',
-            'contrasenaVisible'
-        ));
+        return view(
+            'usuario.show',
+            compact('usuario', 'contrasenaVisible')
+        );
     }
 
-    /**
-     * Mostrar el formulario para editar un usuario.
-     */
-    public function edit(string $id)
+    public function edit($id)
     {
+        $this->autorizarUsuario($id);
+
         $usuario = Usuario::findOrFail($id);
-        $roles = Rol::orderBy('nombre_rol')->get();
+
+        if ($this->esAdministrador()) {
+            $roles = Rol::orderBy('nombre_rol')->get();
+        } else {
+            $roles = collect();
+        }
 
         return view('usuario.edit', [
             'usuario' => $usuario,
@@ -152,87 +179,129 @@ class UsuarioController extends Controller
         ]);
     }
 
-    /**
-     * Actualizar un usuario.
-     */
-    public function update(Request $request, string $id)
+    public function update(Request $request, $id)
     {
+        $this->autorizarUsuario($id);
+
         $usuario = Usuario::findOrFail($id);
 
-        $validated = $request->validate([
-            'nombre' => ['required', 'string', 'max:100'],
-            'apellido' => ['required', 'string', 'max:100'],
-            'correo' => [
-                'required',
-                'email',
-                'max:150',
-                Rule::unique('usuarios', 'correo')
-                    ->ignore($usuario->id),
-            ],
-            'telefono' => ['nullable', 'string', 'max:30'],
-            'direccion' => ['nullable', 'string', 'max:255'],
-            'genero' => ['nullable', 'string', Rule::in(self::GENEROS)],
-            'genero_detalle' => ['nullable', 'string', 'max:100'],
-            'tipo_documento' => [
-                'nullable',
-                'string',
-                Rule::in(self::TIPOS_DOCUMENTO),
-            ],
-            'documento' => ['nullable', 'string', 'max:50'],
-            'contrasena' => [
-                'nullable',
-                'string',
-                'min:8',
-                'confirmed',
-            ],
-            'id_rol' => [
-                'required',
-                'integer',
-                'exists:roles,id_rol',
-            ],
-            'activo' => ['nullable', 'boolean'],
-        ]);
+        if ($this->esAdministrador()) {
+            $validated = $request->validate([
+                'nombre' => ['required', 'string', 'max:100'],
+                'apellido' => ['required', 'string', 'max:100'],
+                'correo' => [
+                    'required',
+                    'email',
+                    'max:150',
+                    Rule::unique('usuarios', 'correo')->ignore($usuario->id, 'id'),
+                ],
+                'telefono' => ['nullable', 'string', 'max:20'],
+                'direccion' => ['nullable', 'string', 'max:255'],
+                'genero' => [
+                    'nullable',
+                    Rule::in(self::GENEROS),
+                ],
+                'genero_detalle' => [
+                    'nullable',
+                    'string',
+                    'max:100',
+                ],
+                'tipo_documento' => [
+                    'nullable',
+                    Rule::in(self::TIPOS_DOCUMENTO),
+                ],
+                'documento' => [
+                    'nullable',
+                    'string',
+                    'max:30',
+                    Rule::unique('usuarios', 'documento')->ignore($usuario->id, 'id'),
+                ],
+                'contrasena' => [
+                    'nullable',
+                    'string',
+                    'min:8',
+                    'confirmed',
+                ],
+                'id_rol' => [
+                    'required',
+                    'exists:roles,id_rol',
+                ],
+                'activo' => ['nullable', 'boolean'],
+            ]);
 
-        if (filled($validated['contrasena'] ?? null)) {
-            $contrasenaOriginal = $validated['contrasena'];
+            if (!empty($validated['contrasena'])) {
+                $contrasenaOriginal = $validated['contrasena'];
 
-            $validated['contrasena'] = Hash::make(
-                $contrasenaOriginal
-            );
+                $validated['contrasena'] = Hash::make(
+                    $contrasenaOriginal
+                );
 
-            $validated['contrasena_cifrada'] =
-                Crypt::encryptString($contrasenaOriginal);
+                $validated['contrasena_cifrada'] = Crypt::encryptString(
+                    $contrasenaOriginal
+                );
+            } else {
+                unset($validated['contrasena']);
+            }
+
+            $validated['activo'] = $request->boolean('activo');
         } else {
-            unset($validated['contrasena']);
+            $validated = $request->validate([
+                'nombre' => ['required', 'string', 'max:100'],
+                'apellido' => ['required', 'string', 'max:100'],
+                'correo' => [
+                    'required',
+                    'email',
+                    'max:150',
+                    Rule::unique('usuarios', 'correo')->ignore($usuario->id, 'id'),
+                ],
+                'telefono' => ['nullable', 'string', 'max:20'],
+                'direccion' => ['nullable', 'string', 'max:255'],
+                'genero' => [
+                    'nullable',
+                    Rule::in(self::GENEROS),
+                ],
+                'genero_detalle' => [
+                    'nullable',
+                    'string',
+                    'max:100',
+                ],
+                'tipo_documento' => [
+                    'nullable',
+                    Rule::in(self::TIPOS_DOCUMENTO),
+                ],
+                'documento' => [
+                    'nullable',
+                    'string',
+                    'max:30',
+                    Rule::unique('usuarios', 'documento')->ignore($usuario->id, 'id'),
+                ],
+            ]);
         }
 
-        $validated['activo'] = $request->boolean('activo');
         if (($validated['genero'] ?? null) !== 'Otro') {
             $validated['genero_detalle'] = null;
         }
+
         $validated['fecha_actualizacion'] = now();
 
         $usuario->update($validated);
 
         return redirect()
-            ->route('usuarios.index')
-            ->with('success', 'Usuario actualizado exitosamente.');
+            ->route('usuarios.show', $usuario->id)
+            ->with('success', 'Perfil actualizado correctamente.');
     }
 
-    /**
-     * Generar una contraseña temporal.
-     */
-    public function restablecerContrasena(string $id)
+    public function restablecerContrasena($id)
     {
         $usuario = Usuario::findOrFail($id);
 
         $contrasenaTemporal = Str::password(12);
 
-
         $usuario->contrasena = Hash::make($contrasenaTemporal);
 
-        $usuario->contrasena_cifrada =
-            Crypt::encryptString($contrasenaTemporal);
+        $usuario->contrasena_cifrada = Crypt::encryptString(
+            $contrasenaTemporal
+        );
 
         $usuario->fecha_actualizacion = now();
 
@@ -240,19 +309,18 @@ class UsuarioController extends Controller
 
         return redirect()
             ->route('usuarios.show', $usuario->id)
-            ->with('mensaje', 'Contraseña restablecida correctamente.')
-            ->with('contrasena_temporal', $contrasenaTemporal);
+            ->with('success', 'Contraseña restablecida correctamente.')
+            ->with('contrasenaTemporal', $contrasenaTemporal);
     }
 
-    /**
-     * Eliminar un usuario.
-     */
-    public function destroy(string $id)
+    public function destroy($id)
     {
-        Usuario::findOrFail($id)->delete();
+        $usuario = Usuario::findOrFail($id);
+
+        $usuario->delete();
 
         return redirect()
             ->route('usuarios.index')
-            ->with('success', 'Usuario eliminado exitosamente.');
+            ->with('success', 'Usuario eliminado correctamente.');
     }
 }
