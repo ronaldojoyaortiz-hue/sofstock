@@ -1,9 +1,23 @@
 <!DOCTYPE html>
-<html lang="es" class="h-full bg-slate-50">
+<html lang="{{ $idiomaSistema ?? 'es' }}" class="h-full bg-slate-50" style="--sofstock-font-size: {{ $tamanoLetra ?? 16 }}px; font-size: var(--sofstock-font-size)">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'Inicio') - {{ config('app.name', 'SofStock') }}</title>
+    <title>@yield('title', 'Inicio') - {{ $nombreSistema ?? config('app.name', 'SofStock') }}</title>
+
+    <script>
+        (() => {
+            const theme = localStorage.getItem('sofstock-theme') || 'light';
+            document.documentElement.classList.toggle('dark', theme === 'dark');
+        })();
+        window.setSofstockTheme = (theme) => {
+            const selectedTheme = theme === 'dark' ? 'dark' : 'light';
+            localStorage.setItem('sofstock-theme', selectedTheme);
+            document.documentElement.classList.toggle('dark', selectedTheme === 'dark');
+            document.body?.classList.toggle('dark', selectedTheme === 'dark');
+            window.dispatchEvent(new CustomEvent('sofstock-theme-changed', { detail: selectedTheme }));
+        };
+    </script>
 
     {{-- Tailwind CSS. Reemplazar por tu build de Vite/PostCSS en producción (ver README). --}}
     <script src="https://cdn.tailwindcss.com"></script>
@@ -33,7 +47,23 @@
 
     <style>
         [x-cloak] { display: none !important; }
-        body { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
+        body { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; font-size: var(--sofstock-font-size, 16px); }
+        html.dark body { background-color: #0f172a; color: #e2e8f0; }
+        html.dark .bg-white { background-color: #1e293b !important; }
+        html.dark .bg-slate-50 { background-color: #0f172a !important; }
+        html.dark .bg-slate-100 { background-color: #334155 !important; }
+        html.dark .bg-slate-200 { background-color: #475569 !important; }
+        html.dark .text-slate-900, html.dark .text-slate-800 { color: #f1f5f9 !important; }
+        html.dark .text-slate-700, html.dark .text-slate-600 { color: #cbd5e1 !important; }
+        html.dark .text-slate-500 { color: #94a3b8 !important; }
+        html.dark .border-slate-100, html.dark .border-slate-200,
+        html.dark .border-slate-300 { border-color: #475569 !important; }
+        html.dark input:not([type='checkbox']):not([type='radio']),
+        html.dark select, html.dark textarea { background-color: #1e293b; color: #f1f5f9; border-color: #475569; }
+        html.dark input::placeholder, html.dark textarea::placeholder { color: #94a3b8; }
+        html.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]) { border-color: #334155; }
+        html.dark .hover\:bg-slate-50:hover { background-color: #334155 !important; }
+        html.dark .hover\:bg-slate-100:hover { background-color: #475569 !important; }
     </style>
 
     @stack('styles')

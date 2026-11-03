@@ -77,7 +77,7 @@
                         <ul class="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3">
                             @foreach ($modulePermissions as $permission)
                                 <li class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-3 text-sm text-emerald-800">
-                                    <span class="font-medium">{{ $permission->name }}</span>
+                                    <span class="font-medium">{{ $permissionLabels[$permission->id] ?? $permission->name }}</span>
                                     <span class="mt-1 block text-xs text-emerald-700">ID: {{ $permission->id }}</span>
                                 </li>
                             @endforeach

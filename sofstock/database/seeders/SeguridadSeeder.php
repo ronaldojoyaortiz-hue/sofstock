@@ -28,6 +28,9 @@ class SeguridadSeeder extends Seeder
             'inmuebles' => ['ver', 'crear', 'editar', 'eliminar'],
             'contratos' => ['ver', 'crear', 'editar', 'eliminar'],
             'auditorias' => ['ver'],
+            'reportes' => ['ver', 'crear', 'editar', 'eliminar'],
+            'settings' => ['ver', 'editar'],
+            'notificaciones' => ['ver', 'crear', 'eliminar'],
         ];
 
         foreach ($permissionsByModule as $module => $actions) {

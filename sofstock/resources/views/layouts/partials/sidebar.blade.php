@@ -16,7 +16,7 @@
             <div class="w-9 h-9 rounded-lg bg-primary-600 flex items-center justify-center text-white font-bold">
                 A
             </div>
-            <span class="text-white font-semibold text-lg tracking-tight">{{ config('app.name', 'SofStock') }}</span>
+            <span class="text-white font-semibold text-lg tracking-tight">{{ $nombreSistema ?? config('app.name', 'SofStock') }}</span>
         </div>
 
         {{-- Navegación --}}
@@ -35,9 +35,9 @@
                     ['label' => 'Proveedores',          'route' => 'proveedores.index',     'icon' => 'users'],
                     ['label' => 'Inmobiliarios',        'route' => 'inmuebles.index',       'icon' => 'home'],
                     ['label' => 'Contratos',            'route' => 'contratos.index',       'icon' => 'history'],
-                    ['label' => 'Reportes',             'route' => 'reports.index',         'icon' => 'chart'],
+                    ['label' => 'Reportes',             'route' => 'reports.index',         'icon' => 'chart', 'can' => 'ver reportes'],
                     ['label' => 'Auditorías',           'route' => 'auditorias.index',      'icon' => 'history'],
-                    ['label' => 'Configuración',        'route' => 'settings.index',        'icon' => 'cog'],
+                    ['label' => 'Configuración',        'route' => 'settings.index',        'icon' => 'cog', 'always' => true],
                 ];
             @endphp
 
@@ -49,7 +49,7 @@
                     $nombreRol = mb_strtolower(trim(auth()->user()->rol?->nombre_rol ?? ''));
                     $esAdministrador = $nombreRol === 'administrador' || auth()->user()->hasRole('administrador');
                 @endphp
-                @continue(! auth()->user()->can($requiredPermission) && ! $esAdministrador)
+                @continue(! ($link['always'] ?? false) && ! auth()->user()->can($requiredPermission) && ! $esAdministrador)
                 @php
                     $active = Route::has($link['route']) && (
                         $link['route'] === 'home'

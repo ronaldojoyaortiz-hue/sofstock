@@ -12,7 +12,7 @@
         @if ($showMatrix && $canManage)
             <x-button variant="secondary" href="{{ route('seguridad.permisos.roles') }}">Volver a roles</x-button>
         @else
-            <x-button href="{{ route('seguridad.permisos.roles', ['gestionar' => 1]) }}">Crear permiso</x-button>
+            <x-button href="{{ route('seguridad.permisos.roles', ['gestionar' => 1]) }}">Gestionar permisos</x-button>
         @endif
     </div>
 
@@ -139,8 +139,8 @@
                                             <input type="checkbox" name="permissions[]" value="{{ $permission->id }}"
                                                 @checked($selectedRole->permissions->contains('id', $permission->id))
                                                 class="mt-0.5 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
-                                                aria-label="{{ $permission->name }}">
-                                            <span>{{ $permission->name }}</span>
+                                                aria-label="{{ $permissionLabels[$permission->id] ?? $permission->name }}">
+                                            <span>{{ $permissionLabels[$permission->id] ?? $permission->name }}</span>
                                         </label>
                                     @endforeach
                                 </div>
@@ -168,7 +168,7 @@
                             <div class="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3">
                                 @forelse ($assignedPermissions as $permission)
                                     <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-3 text-sm text-emerald-800">
-                                        {{ $permission->name }}
+                                        {{ $permissionLabels[$permission->id] ?? $permission->name }}
                                     </div>
                                 @empty
                                     <p class="text-sm text-slate-500">Sin permisos asignados en este módulo.</p>
