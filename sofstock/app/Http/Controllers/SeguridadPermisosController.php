@@ -32,6 +32,7 @@ class SeguridadPermisosController extends Controller
             ->flatMap(fn (Role $role) => $role->permissions->map(fn (Permission $permission) => (object) [
                 'role' => $role,
                 'permission' => $permission,
+                'permissionLabel' => $this->nombreVisiblePermiso($permission),
             ]))
             ->sortBy([
                 ['role.id', 'asc'],
@@ -61,9 +62,11 @@ class SeguridadPermisosController extends Controller
             ->unique('id')
             ->values();
         $permissions = $role->permissions
-            ->groupBy(fn (Permission $permission) => Str::afterLast($permission->name, ' '));
+            ->groupBy(fn (Permission $permission) => $this->moduloVisiblePermiso($permission));
+        $permissionLabels = $role->permissions
+            ->mapWithKeys(fn (Permission $permission) => [$permission->id => $this->nombreVisiblePermiso($permission)]);
 
-        return view('seguridad.permisos.role-show', compact('role', 'legacyRole', 'users', 'permissions'));
+        return view('seguridad.permisos.role-show', compact('role', 'legacyRole', 'users', 'permissions', 'permissionLabels'));
     }
 
     public function destroyRole(int $role): RedirectResponse
@@ -99,8 +102,9 @@ class SeguridadPermisosController extends Controller
         abort_if($role->name === 'administrador', 404);
         $permission = $this->findWebPermission($permission);
         abort_unless($role->hasPermissionTo($permission), 404);
+        $permissionLabel = $this->nombreVisiblePermiso($permission);
 
-        return view('seguridad.permisos.show', compact('role', 'permission'));
+        return view('seguridad.permisos.show', compact('role', 'permission', 'permissionLabel'));
     }
 
     public function destroyAssignment(int $role, int $permission): RedirectResponse
@@ -109,13 +113,14 @@ class SeguridadPermisosController extends Controller
         abort_if($role->name === 'administrador', 404);
         $permission = $this->findWebPermission($permission);
         abort_unless($role->hasPermissionTo($permission), 404);
+        $permissionLabel = $this->nombreVisiblePermiso($permission);
         DB::transaction(function () use ($role, $permission): void {
             $role->permissions()->detach($permission->getKey());
         });
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         return redirect()->route('seguridad.permisos.assignments')
-            ->with('success', "Se quitó «{$permission->name}» del rol {$role->name}.");
+            ->with('success', "Se quitó «{$permissionLabel}» del rol {$role->name}.");
     }
 
     public function roles(Request $request): View
@@ -124,7 +129,11 @@ class SeguridadPermisosController extends Controller
             ->where('guard_name', 'web')
             ->orderBy('name')
             ->get()
-            ->groupBy(fn (Permission $permission) => Str::afterLast($permission->name, ' '));
+            ->groupBy(fn (Permission $permission) => $this->moduloVisiblePermiso($permission));
+        $permissionLabels = Permission::query()
+            ->where('guard_name', 'web')
+            ->get()
+            ->mapWithKeys(fn (Permission $permission) => [$permission->id => $this->nombreVisiblePermiso($permission)]);
         $roles = Role::query()
             ->with(['permissions' => fn ($query) => $query->where('guard_name', 'web')])
             ->where('guard_name', 'web')
@@ -137,7 +146,7 @@ class SeguridadPermisosController extends Controller
         $showMatrix = $request->filled('role_id') || $request->boolean('gestionar');
         $canManage = $request->boolean('gestionar');
 
-        return view('seguridad.permisos.roles', compact('permissions', 'roles', 'selectedRole', 'showMatrix', 'canManage'));
+        return view('seguridad.permisos.roles', compact('permissions', 'permissionLabels', 'roles', 'selectedRole', 'showMatrix', 'canManage'));
     }
 
     public function updateRole(Request $request, Role $role): RedirectResponse
@@ -174,5 +183,17 @@ class SeguridadPermisosController extends Controller
         return Permission::query()
             ->where('guard_name', 'web')
             ->findOrFail($id);
+    }
+
+    private function nombreVisiblePermiso(Permission $permission): string
+    {
+        return preg_replace('/^(ver|crear|editar|eliminar) reports$/u', '$1 reportes', $permission->name) ?? $permission->name;
+    }
+
+    private function moduloVisiblePermiso(Permission $permission): string
+    {
+        $module = Str::afterLast($this->nombreVisiblePermiso($permission), ' ');
+
+        return $module === 'reports' ? 'reportes' : $module;
     }
 }

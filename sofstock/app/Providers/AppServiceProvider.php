@@ -14,6 +14,9 @@ use App\Models\Proveedores;
 use App\Models\Rol;
 use App\Models\Usuario;
 use App\Models\User;
+use App\Models\ConfiguracionSistema;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\View;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -34,5 +37,21 @@ class AppServiceProvider extends ServiceProvider
         Rol::observe(AuditoriaObserver::class);
         Usuario::observe(AuditoriaObserver::class);
         User::observe(AuditoriaObserver::class);
+
+        View::composer(['layouts.app', 'reportes.show'], function ($view): void {
+            $configuracion = Schema::hasTable('configuraciones_sistema')
+                ? ConfiguracionSistema::query()->find(1)
+                : null;
+            app()->setLocale($configuracion?->idioma ?? 'es');
+            $view->with('nombreSistema', $configuracion?->nombre_empresa ?? config('app.name', 'SofStock'));
+            $view->with('idiomaSistema', $configuracion?->idioma ?? 'es');
+            $view->with('tamanoLetra', $configuracion?->tamano_letra ?? 16);
+            $view->with('simboloMoneda', match ($configuracion?->moneda ?? 'COP') {
+                'USD' => 'US$',
+                'EUR' => '€',
+                'MXN' => 'MX$',
+                default => '$',
+            });
+        });
     }
 }

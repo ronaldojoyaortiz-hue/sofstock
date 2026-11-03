@@ -31,7 +31,7 @@
             </div>
             <div class="sm:text-right">
                 <p class="text-xs uppercase tracking-wide text-slate-500">Permiso</p>
-                <p class="mt-1 font-medium text-slate-800">{{ $permission->name }}</p>
+                <p class="mt-1 font-medium text-slate-800">{{ $permissionLabel }}</p>
             </div>
         </div>
     </x-card>

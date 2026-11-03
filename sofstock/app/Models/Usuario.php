@@ -2,9 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 use Spatie\Permission\Traits\HasRoles;
 
 class Usuario extends Authenticatable
@@ -64,5 +65,22 @@ class Usuario extends Authenticatable
     public function auditorias(): HasMany
     {
         return $this->hasMany(Auditoria::class, 'id_usuario', 'id');
+    }
+
+    public function notificacionesEnviadas(): HasMany
+    {
+        return $this->hasMany(Notificacion::class, 'usuario_emisor_id', 'id');
+    }
+
+    public function notificacionesRecibidas(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Notificacion::class,
+            'notificacion_usuario',
+            'id_usuario',
+            'id_notificacion',
+            'id',
+            'id'
+        )->withPivot('leida_at')->withTimestamps();
     }
 }
