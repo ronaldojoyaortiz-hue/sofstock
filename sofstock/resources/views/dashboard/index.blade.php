@@ -4,6 +4,15 @@
 @section('page-title', 'Inicio')
 
 @section('content')
+<div class="mb-6 bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+    <h2 class="text-2xl font-bold text-slate-800">
+        ¡Hola, {{ auth()->user()->nombre }}!
+    </h2>
+
+    <p class="text-sm text-slate-500 mt-1">
+        Bienvenido de nuevo a SofStock.
+    </p>
+</div>
 
     {{-- Tarjetas estadísticas --}}
     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
