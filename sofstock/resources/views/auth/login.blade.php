@@ -108,6 +108,9 @@
         </form>
 
         <a href="{{ route('password.forgot') }}" class="mt-5 block text-center text-sm font-medium text-green-700 hover:text-green-800">¿Olvidaste tu contraseña?</a>
+        @if ($setupDisponible)
+            <a href="{{ route('initial-admin.create') }}" class="mt-3 block text-center text-sm font-medium text-green-700 hover:text-green-800">Crear la primera cuenta de administrador</a>
+        @endif
 
         <div class="mt-8 text-center text-xs text-gray-400">
             SofStock · Sistema de gestión de inventario

@@ -51,5 +51,12 @@ proveedores, usuarios, roles y facturas.
    php artisan serve
    ```
 
-Abre la dirección que muestra Artisan en el navegador. El idioma predeterminado
-de la aplicación es español.
+7. Abre la dirección que muestra Artisan en el navegador. Si todavía no hay
+   usuarios, usa el enlace **Crear la primera cuenta de administrador** en la
+   pantalla de inicio de sesión. El formulario solo está disponible mientras no
+   exista ninguna cuenta; esa primera cuenta recibe el rol de administrador y
+   debe configurar una pregunta de seguridad al ingresar. Completa este paso
+   antes de exponer la aplicación a otras personas.
+
+Luego, las demás cuentas solo pueden ser creadas por un administrador desde la
+sección de usuarios. El idioma predeterminado de la aplicación es español.

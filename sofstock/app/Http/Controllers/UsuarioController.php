@@ -46,6 +46,11 @@ class UsuarioController extends Controller
         );
     }
 
+    private function autorizarAdministrador(): void
+    {
+        abort_unless($this->esAdministrador(), 403);
+    }
+
     public function index()
     {
         if ($this->esAdministrador()) {
@@ -61,6 +66,8 @@ class UsuarioController extends Controller
 
     public function create()
     {
+        $this->autorizarAdministrador();
+
         $roles = Rol::orderBy('nombre_rol')->get();
 
         return view('usuario.create', [
@@ -72,6 +79,8 @@ class UsuarioController extends Controller
 
     public function store(Request $request)
     {
+        $this->autorizarAdministrador();
+
         $validated = $request->validate([
             'nombre' => ['required', 'string', 'max:100'],
             'apellido' => ['required', 'string', 'max:100'],
