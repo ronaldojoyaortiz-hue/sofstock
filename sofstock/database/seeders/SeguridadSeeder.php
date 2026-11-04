@@ -27,6 +27,7 @@ class SeguridadSeeder extends Seeder
             'proveedores' => ['ver', 'crear', 'editar', 'eliminar'],
             'inmuebles' => ['ver', 'crear', 'editar', 'eliminar'],
             'contratos' => ['ver', 'crear', 'editar', 'eliminar'],
+            'actas' => ['ver', 'crear', 'editar', 'eliminar'],
             'auditorias' => ['ver'],
             'reportes' => ['ver', 'crear', 'editar', 'eliminar'],
             'settings' => ['ver', 'editar'],

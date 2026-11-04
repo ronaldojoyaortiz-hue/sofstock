@@ -35,6 +35,7 @@
                     ['label' => 'Proveedores',          'route' => 'proveedores.index',     'icon' => 'users'],
                     ['label' => 'Inmobiliarios',        'route' => 'inmuebles.index',       'icon' => 'home'],
                     ['label' => 'Contratos',            'route' => 'contratos.index',       'icon' => 'history'],
+                    ['label' => 'Actas',                'route' => 'actas.index',           'icon' => 'history'],
                     ['label' => 'Reportes',             'route' => 'reports.index',         'icon' => 'chart', 'can' => 'ver reportes'],
                     ['label' => 'Auditorías',           'route' => 'auditorias.index',      'icon' => 'history'],
                     ['label' => 'Configuración',        'route' => 'settings.index',        'icon' => 'cog', 'always' => true],

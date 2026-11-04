@@ -18,6 +18,7 @@ use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\ConfiguracionController;
 use App\Http\Controllers\BusquedaController;
 use App\Http\Controllers\NotificacionController;
+use App\Http\Controllers\ActaController;
 
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.authenticate');
@@ -69,6 +70,7 @@ Route::middleware('auth')->group(function () {
     Route::get('auditorias', [AuditoriaController::class, 'index'])->middleware('permiso:auditorias,ver')->name('auditorias.index');
     Route::get('auditorias/{id}', [AuditoriaController::class, 'show'])->whereNumber('id')->middleware('permiso:auditorias,ver')->name('auditorias.show');
     Route::get('/contratos', [ContratoController::class, 'all'])->middleware('permiso:contratos,ver')->name('contratos.index');
+    Route::resource('actas', ActaController::class)->middleware('permiso:actas');
     Route::get('/contratos/crear', [ContratoController::class, 'createGlobal'])->middleware('permiso:contratos,crear')->name('contratos.create');
     Route::post('/contratos/crear', [ContratoController::class, 'selectInmueble'])->middleware('permiso:contratos,crear')->name('contratos.select-inmueble');
     Route::get('/inmuebles/{inmueble}/archivos/{indice}', [InmobiliarioController::class, 'archivo'])->whereNumber(['inmueble', 'indice'])->middleware('permiso:inmuebles,ver')->name('inmuebles.archivos.show');
