@@ -19,7 +19,10 @@ use App\Http\Controllers\ConfiguracionController;
 use App\Http\Controllers\BusquedaController;
 use App\Http\Controllers\NotificacionController;
 use App\Http\Controllers\ActaController;
+use App\Http\Controllers\InitialAdminController;
 
+Route::get('/configuracion-inicial/administrador', [InitialAdminController::class, 'create'])->name('initial-admin.create');
+Route::post('/configuracion-inicial/administrador', [InitialAdminController::class, 'store'])->name('initial-admin.store');
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.authenticate');
 Route::get('/recuperar-contrasena', [AuthController::class, 'showForgotPassword'])->name('password.forgot');
