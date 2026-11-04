@@ -52,6 +52,9 @@
                 {{ $errors->first() }}
             </div>
         @endif
+        @if (session('success'))
+            <div class="mb-5 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">{{ session('success') }}</div>
+        @endif
 
         <form method="POST" action="{{ route('login.authenticate') }}">
             @csrf
@@ -103,6 +106,8 @@
                 Iniciar sesión
             </button>
         </form>
+
+        <a href="{{ route('password.forgot') }}" class="mt-5 block text-center text-sm font-medium text-green-700 hover:text-green-800">¿Olvidaste tu contraseña?</a>
 
         <div class="mt-8 text-center text-xs text-gray-400">
             SofStock · Sistema de gestión de inventario

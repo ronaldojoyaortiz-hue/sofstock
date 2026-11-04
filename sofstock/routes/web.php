@@ -22,8 +22,14 @@ use App\Http\Controllers\ActaController;
 
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.authenticate');
+Route::get('/recuperar-contrasena', [AuthController::class, 'showForgotPassword'])->name('password.forgot');
+Route::post('/recuperar-contrasena/pregunta', [AuthController::class, 'findRecoveryQuestion'])->name('password.recovery.question');
+Route::post('/recuperar-contrasena/restablecer', [AuthController::class, 'resetPasswordWithSecurityQuestion'])->name('password.recovery.reset');
+Route::post('/recuperar-contrasena/guardar-respuesta', [AuthController::class, 'saveRecoveryAnswerAgain'])->name('password.recovery.save-answer');
 Route::redirect('/', '/login')->name('home');
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', \App\Http\Middleware\ExigirPreguntaSeguridad::class])->group(function () {
+    Route::get('/configurar-pregunta-seguridad', [AuthController::class, 'showSecurityQuestionSetup'])->name('security-question.setup');
+    Route::post('/configurar-pregunta-seguridad', [AuthController::class, 'saveSecurityQuestion'])->name('security-question.save');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/cambiar-contrasena', [AuthController::class, 'showChangePassword'])->name('password.change');
     Route::get('/buscar', [BusquedaController::class, 'index'])->name('search.index');

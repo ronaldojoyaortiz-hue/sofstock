@@ -98,6 +98,8 @@ class AuditoriaObserver
         $camposSensibles = [
             'contrasena',
             'contrasena_cifrada',
+            'pregunta_seguridad',
+            'respuesta_seguridad',
             'password',
             'password_confirmation',
             'remember_token',

@@ -80,6 +80,8 @@ class AuditoriaService
             if (
                 str_contains($nombreCampo, 'password') ||
                 str_contains($nombreCampo, 'contrasena') ||
+                str_contains($nombreCampo, 'pregunta_seguridad') ||
+                str_contains($nombreCampo, 'respuesta_seguridad') ||
                 str_contains($nombreCampo, 'token') ||
                 str_contains($nombreCampo, 'secret') ||
                 $nombreCampo === 'clave'

@@ -34,11 +34,14 @@ class Usuario extends Authenticatable
         'activo',
         'fecha_registro',
         'fecha_actualizacion',
+        'pregunta_seguridad',
+        'respuesta_seguridad',
     ];
 
     protected $hidden = [
         'contrasena',
         'contrasena_cifrada',
+        'respuesta_seguridad',
     ];
 
     protected $casts = [
