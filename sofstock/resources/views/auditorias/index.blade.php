@@ -12,6 +12,9 @@
             <h2 class="text-lg font-semibold text-gray-800">
                 Historial de actividades
             </h2>
+            @if (session('success'))
+                <p class="mt-2 text-sm text-emerald-700" role="status">{{ session('success') }}</p>
+            @endif
         </div>
 
         <div class="overflow-x-auto">
@@ -41,7 +44,7 @@
                         </th>
 
                         <th class="px-4 py-3 text-center text-xs font-semibold uppercase text-gray-600">
-                            Detalle
+                            Acciones
                         </th>
                     </tr>
                 </thead>
@@ -91,6 +94,7 @@
                             </td>
 
                             <td class="whitespace-nowrap px-4 py-3 text-center">
+                                <div class="inline-flex items-center gap-2">
                                 <a
                                     href="{{ route('auditorias.show', $auditoria->id_auditoria) }}"
                                     class="inline-flex rounded-md bg-slate-100 p-2 text-slate-700 transition hover:bg-slate-200 hover:text-slate-900"
@@ -98,6 +102,20 @@
                                     aria-label="Ver detalle de auditoría">
                                     <span class="block h-5 w-5" aria-hidden="true">@include('layouts.partials.icons', ['icon' => 'eye'])</span>
                                 </a>
+                                @can('eliminar auditorias')
+                                    <form method="POST" action="{{ route('auditorias.destroy', $auditoria->id_auditoria) }}"
+                                        onsubmit="return confirm('La auditoría solo se ocultará de tu historial. Los demás usuarios seguirán viéndola. ¿Continuar?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit"
+                                            class="inline-flex rounded-md bg-red-50 p-2 text-red-700 transition hover:bg-red-100 hover:text-red-900"
+                                            title="Ocultar de mi historial"
+                                            aria-label="Ocultar auditoría de mi historial">
+                                            <span class="block h-5 w-5" aria-hidden="true">@include('layouts.partials.icons', ['icon' => 'trash'])</span>
+                                        </button>
+                                    </form>
+                                @endcan
+                                </div>
                             </td>
 
                         </tr>

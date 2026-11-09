@@ -52,6 +52,7 @@
             </form>
 
             {{-- Notificaciones --}}
+            @can('acceder notificaciones')
             <div x-data="{ open: false }" class="relative">
                 <button
                     @click="open = !open"
@@ -61,7 +62,11 @@
                     aria-label="Ver notificaciones"
                 >
                     <span class="w-5 h-5 block">@include('layouts.partials.icons', ['icon' => 'bell'])</span>
-                    <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-white"></span>
+                    @if ($noLeidas > 0)
+                        <span class="absolute -top-1 -right-1 min-w-5 h-5 rounded-full bg-red-500 px-1 text-center text-xs leading-5 text-white ring-2 ring-white">
+                            {{ $noLeidas > 99 ? '99+' : $noLeidas }}
+                        </span>
+                    @endif
                 </button>
 
                 <div
@@ -74,25 +79,64 @@
                         Notificaciones
                     </div>
 
+                    @php
+                        $usuarioActual = auth()->user();
+                        $esAdministrador = $usuarioActual->hasRole('administrador')
+                            || mb_strtolower(trim($usuarioActual->rol?->nombre_rol ?? '')) === 'administrador';
+                        $puedeCrearNotificaciones = $esAdministrador || $usuarioActual->can('crear notificaciones');
+                        $puedeEliminarNotificaciones = $esAdministrador || $usuarioActual->can('eliminar notificaciones');
+                    @endphp
+
                     <ul class="max-h-72 overflow-y-auto divide-y divide-slate-100">
-                        @forelse (($notifications ?? []) as $notification)
-                            <li class="px-4 py-3 text-sm hover:bg-slate-50">
-                                <p class="text-slate-700">{{ $notification['message'] }}</p>
-                                <p class="text-xs text-slate-400 mt-1">{{ $notification['time'] }}</p>
+                        @forelse ($notificacionesNavbar as $notification)
+                            <li x-data="{ expanded: false }" class="px-4 py-3 text-sm hover:bg-slate-50">
+                                <div>
+                                    <p class="font-medium text-slate-700">{{ $notification->titulo }}</p>
+                                    <p class="mt-1 text-slate-600" :class="expanded ? 'whitespace-pre-line' : 'line-clamp-2'">{{ $notification->mensaje }}</p>
+                                    @if ($notification->tipo === \App\Models\Notificacion::TIPO_SOLICITUD_REGISTRO && $esAdministrador)
+                                        <a href="{{ route('registration-requests.index') }}" class="mt-2 inline-flex text-xs font-semibold text-primary-700 hover:text-primary-900">Revisar solicitudes</a>
+                                    @endif
+                                    <button type="button" @click="expanded = !expanded" class="mt-1 text-xs font-medium text-primary-700 hover:text-primary-900" x-text="expanded ? 'Ver menos' : 'Leer completa'">Leer completa</button>
+                                    @if ($notification->fecha_evento)
+                                        <p class="mt-2 text-xs text-slate-500">Fecha del evento: {{ $notification->fecha_evento->format('d/m/Y H:i') }}</p>
+                                    @endif
+                                    @if ($notification->lugar)
+                                        <p class="mt-1 text-xs text-slate-500">Lugar: {{ $notification->lugar }}</p>
+                                    @endif
+                                    @if ($notification->producto)
+                                        <p class="mt-1 text-xs text-slate-500">Producto: {{ $notification->producto->nombre }}</p>
+                                    @endif
+                                    <p class="mt-2 text-xs text-slate-400">
+                                        Enviada por {{ $notification->emisor ? trim($notification->emisor->nombre . ' ' . $notification->emisor->apellido) : 'el sistema' }}
+                                        · {{ $notification->created_at?->diffForHumans() }}
+                                    </p>
+                                    <div class="mt-2 flex items-center gap-3">
+                                        @if (!$notification->pivot->leida_at)
+                                            <form method="POST" action="{{ route('notificaciones.leida', $notification) }}">
+                                                @csrf
+                                                @method('PATCH')
+                                                <button type="submit" class="text-xs font-medium text-primary-700 hover:text-primary-900">Marcar como leída</button>
+                                            </form>
+                                        @else
+                                            <span class="text-xs text-slate-400">Leída</span>
+                                        @endif
+                                        @if ($puedeEliminarNotificaciones)
+                                            <form method="POST" action="{{ route('notificaciones.destroy', $notification) }}" onsubmit="return confirm('¿Eliminar esta notificación para todos sus destinatarios?')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="text-xs font-medium text-red-600 hover:text-red-800">Eliminar</button>
+                                            </form>
+                                        @endif
+                                    </div>
+                                </div>
                             </li>
                         @empty
                             <li class="px-4 py-6 text-sm text-slate-400 text-center">
-                                Sin notificaciones nuevas
+                                No hay notificaciones.
                             </li>
                         @endforelse
                     </ul>
 
-                    @php
-                        $usuarioActual = auth()->user();
-                        $puedeCrearNotificaciones = $usuarioActual->hasRole('administrador')
-                            || mb_strtolower(trim($usuarioActual->rol?->nombre_rol ?? '')) === 'administrador'
-                            || $usuarioActual->can('crear notificaciones');
-                    @endphp
                     @if ($puedeCrearNotificaciones)
                         <div class="border-t border-slate-100 p-3">
                             <a
@@ -105,6 +149,7 @@
                     @endif
                 </div>
             </div>
+            @endcan
 
             {{-- Menú de usuario --}}
             <div x-data="{ open: false }" class="relative">
@@ -138,19 +183,14 @@
                     x-transition
                     class="absolute right-0 mt-2 w-52 bg-white rounded-xl shadow-lg border border-slate-100 overflow-hidden py-1"
                 >
-                    <a
-                        href="{{ route('password.change') }}"
-                        class="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50"
-                    >
-                        Cambiar contraseña
-                    </a>
-
-                    <a
-                        href="{{ Route::has('settings.index') ? route('settings.index') : '#' }}"
-                        class="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50"
-                    >
-                        Configuración
-                    </a>
+                    @can('acceder settings')
+                        <a
+                            href="{{ Route::has('settings.index') ? route('settings.index') : '#' }}"
+                            class="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50"
+                        >
+                            Configuración
+                        </a>
+                    @endcan
 
                     <hr class="my-1 border-slate-100">
 

@@ -139,15 +139,6 @@
                 </p>
             </div>
 
-            <div class="sm:text-right">
-                <p class="text-xs uppercase tracking-wide text-slate-500">
-                    Última actualización
-                </p>
-
-                <p class="mt-1 font-medium text-slate-800">
-                    {{ $usuario->fecha_actualizacion?->format('d/m/Y H:i') ?? 'Sin actualizaciones' }}
-                </p>
-            </div>
         </div>
 
         {{-- Administración de contraseña --}}

@@ -16,7 +16,9 @@
             <h1 class="text-2xl font-bold text-slate-800">Reportes</h1>
             <p class="mt-1 text-sm text-slate-500">Genera reportes por período y consulta los que ya guardaste.</p>
         </div>
-        <x-button type="button" @click="generarAbierto = true">Generar reporte</x-button>
+        @if ($esAdministrador || $usuario->can('crear reportes'))
+            <x-button type="button" @click="generarAbierto = true">Generar reporte</x-button>
+        @endif
     </div>
 
     @unless ($tablasFinancierasListas)
@@ -116,6 +118,7 @@
         @endif
     </x-card>
 
+    @if ($esAdministrador || $usuario->can('crear reportes'))
     <div x-show="generarAbierto" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4" @keydown.escape.window="generarAbierto = false">
         <div class="w-full max-w-xl rounded-xl bg-white p-6 shadow-xl" @click.outside="generarAbierto = false">
             <div class="mb-5 flex items-start justify-between">
@@ -159,6 +162,7 @@
                             <label for="fecha_hasta" class="mb-1 block text-sm font-medium text-slate-700">Hasta</label>
                             <input id="fecha_hasta" name="fecha_hasta" type="date" :required="periodo === 'personalizado'" value="{{ old('fecha_hasta', $fechaPredeterminada) }}" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200">
                         </div>
+                        @endif
                     </div>
                     <div class="flex justify-end gap-2 pt-2">
                         <x-button type="button" variant="secondary" @click="generarAbierto = false">Cancelar</x-button>

@@ -4,13 +4,18 @@
 @section('page-title', 'Configuración')
 
 @section('content')
+@php($puedeEditarConfiguracion = auth()->user()->can('editar settings'))
 <div class="mb-6">
     <h1 class="text-2xl font-bold text-slate-800">Configuración general</h1>
     <p class="mt-1 text-sm text-slate-500">Personaliza el nombre, el idioma, el tamaño de letra y la apariencia de SofStock.</p>
-    <a href="{{ route('password.change') }}" class="mt-3 inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary-500">
-        Cambiar contraseña
-    </a>
 </div>
+
+<x-card title="Mi cuenta" class="mb-6 max-w-3xl">
+    <p class="mb-4 text-sm text-slate-500">Consulta tu cuenta, cambia tu contraseña o desactívala.</p>
+    <a href="{{ route('account.show') }}" class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary-500">
+        Ir a mi cuenta
+    </a>
+</x-card>
 
 <x-card title="Apariencia" class="mb-6 max-w-3xl">
     <p class="mb-4 text-sm text-slate-500">Elige cómo quieres ver el sistema en este navegador.</p>
@@ -39,14 +44,14 @@
 
             <div>
                 <label for="nombre_empresa" class="mb-1 block text-sm font-medium text-slate-700">Nombre de la empresa o sistema</label>
-                <input id="nombre_empresa" name="nombre_empresa" type="text" maxlength="120" required value="{{ old('nombre_empresa', $configuracion->nombre_empresa) }}" @disabled(! $tablaDisponible) class="w-full max-w-xl rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200">
+                <input id="nombre_empresa" name="nombre_empresa" type="text" maxlength="120" required value="{{ old('nombre_empresa', $configuracion->nombre_empresa) }}" @disabled(! $tablaDisponible || ! $puedeEditarConfiguracion) class="w-full max-w-xl rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200">
                 @error('nombre_empresa') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                 <p class="mt-1 text-xs text-slate-500">Se muestra en el título, el menú y el pie de página.</p>
             </div>
 
             <div>
                 <label for="idioma" class="mb-1 block text-sm font-medium text-slate-700">Idioma</label>
-                <select id="idioma" name="idioma" required @disabled(! $tablaDisponible) class="w-full max-w-xl rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200">
+                <select id="idioma" name="idioma" required @disabled(! $tablaDisponible || ! $puedeEditarConfiguracion) class="w-full max-w-xl rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200">
                     @foreach ($idiomas as $codigo => $nombre)
                         <option value="{{ $codigo }}" @selected(old('idioma', $configuracion->idioma ?? 'es') === $codigo)>{{ $nombre }}</option>
                     @endforeach
@@ -57,7 +62,7 @@
 
             <div>
                 <label for="tamano_letra" class="mb-1 block text-sm font-medium text-slate-700">Tamaño de letra</label>
-                <select id="tamano_letra" name="tamano_letra" required @disabled(! $tablaDisponible) class="w-full max-w-xl rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200">
+                <select id="tamano_letra" name="tamano_letra" required @disabled(! $tablaDisponible || ! $puedeEditarConfiguracion) class="w-full max-w-xl rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200">
                     @foreach ($tamanosLetra as $valor => $nombre)
                         <option value="{{ $valor }}" @selected((int) old('tamano_letra', $configuracion->tamano_letra ?? 16) === $valor)>{{ $nombre }} ({{ $valor }} px)</option>
                     @endforeach
@@ -66,14 +71,18 @@
             </div>
 
             <p class="border-t border-slate-100 pt-4 text-sm text-slate-500" role="status">
-                Los cambios se guardan automáticamente al modificar cada campo.
+                @if ($puedeEditarConfiguracion)
+                    Los cambios se guardan automáticamente al modificar cada campo.
+                @else
+                    Tienes acceso de solo lectura a esta configuración.
+                @endif
             </p>
         </form>
 </x-card>
 @endsection
 
 @push('scripts')
-    @if ($tablaDisponible)
+    @if ($tablaDisponible && $puedeEditarConfiguracion)
         <script>
             document.getElementById('configuracion-form')?.addEventListener('change', (event) => {
                 if (event.target.matches('input, select')) {

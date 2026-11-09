@@ -37,35 +37,27 @@ class Permiso
             return $next($request);
         }
 
+        abort_unless(
+            $usuario?->can("acceder {$modulo}"),
+            403
+        );
 
         if (
             $modulo === 'usuarios' &&
-            in_array($metodo, ['index', 'show', 'edit', 'update'], true)
+            in_array($metodo, ['show', 'edit', 'update'], true)
         ) {
-            if ($nombreRol !== 'administrador') {
+            $id = $request->route('usuario')
+                ?? $request->route('id');
 
-
-
-                if ($metodo === 'index') {
-                    return $next($request);
-                }
-
-
-                $id = $request->route('usuario')
-                    ?? $request->route('id');
-
-                if (is_object($id)) {
-                    $id = $id->getKey();
-                }
-
-                abort_unless(
-                    (string) $id ===
-                        (string) $usuario?->getAuthIdentifier(),
-                    403
-                );
-
-                return $next($request);
+            if (is_object($id)) {
+                $id = $id->getKey();
             }
+
+            abort_unless(
+                (string) $id ===
+                    (string) $usuario?->getAuthIdentifier(),
+                403
+            );
         }
 
         $accion ??= self::ACTION_PERMISSIONS[$metodo] ?? null;
@@ -76,6 +68,13 @@ class Permiso
             $usuario?->can("{$accion} {$modulo}"),
             403
         );
+
+        if ($metodo === 'edit') {
+            abort_unless(
+                $usuario?->can("ver {$modulo}"),
+                403
+            );
+        }
 
         return $next($request);
     }

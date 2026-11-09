@@ -13,9 +13,11 @@
 
         {{-- Logo --}}
         <div class="flex items-center gap-3 h-16 px-6 border-b border-slate-800">
-            <div class="w-9 h-9 rounded-lg bg-primary-600 flex items-center justify-center text-white font-bold">
-                A
-            </div>
+            <img
+                src="{{ asset('images/sofstock-logo.png') }}"
+                alt="Logo de SofStock"
+                class="w-10 h-10 flex-shrink-0 rounded-full object-cover"
+            >
             <span class="text-white font-semibold text-lg tracking-tight">{{ $nombreSistema ?? config('app.name', 'SofStock') }}</span>
         </div>
 
@@ -24,33 +26,33 @@
 
             @php
                 $links = [
-                    ['label' => 'Inicio',               'route' => 'dashboard.index',       'icon' => 'home'],
-                    ['label' => 'Usuarios',             'route' => 'usuarios.index',       'icon' => 'users'],
-                    ['label' => 'Perfiles/Roles',       'route' => 'roles.index',           'icon' => 'shield'],
-                    ['label' => 'Gestionar permisos',   'route' => 'seguridad.permisos.index', 'icon' => 'shield', 'can' => 'gestionar seguridad'],
-                    ['label' => 'Categorías',           'route' => 'categorias.index',      'icon' => 'tag'],
-                    ['label' => 'Productos',            'route' => 'productos.index',       'icon' => 'box'],
-                    ['label' => 'Detalles de factura',  'route' => 'detallefacturas.index', 'icon' => 'chart', 'can' => 'ver facturas'],
-                    ['label' => 'Facturas',             'route' => 'facturas.index',        'icon' => 'chart'],
-                    ['label' => 'Proveedores',          'route' => 'proveedores.index',     'icon' => 'users'],
-                    ['label' => 'Inmobiliarios',        'route' => 'inmuebles.index',       'icon' => 'home'],
-                    ['label' => 'Contratos',            'route' => 'contratos.index',       'icon' => 'history'],
-                    ['label' => 'Actas',                'route' => 'actas.index',           'icon' => 'history'],
-                    ['label' => 'Reportes',             'route' => 'reports.index',         'icon' => 'chart', 'can' => 'ver reportes'],
-                    ['label' => 'Auditorías',           'route' => 'auditorias.index',      'icon' => 'history'],
-                    ['label' => 'Configuración',        'route' => 'settings.index',        'icon' => 'cog', 'always' => true],
+                    ['label' => 'Inicio', 'route' => 'dashboard.index', 'icon' => 'home', 'module' => 'dashboard'],
+                    ['label' => 'Usuarios', 'route' => 'usuarios.index', 'icon' => 'users', 'module' => 'usuarios'],
+                    ['label' => 'Perfiles/Roles', 'route' => 'roles.index', 'icon' => 'shield', 'module' => 'roles'],
+                    ['label' => 'Gestionar permisos', 'route' => 'seguridad.permisos.index', 'icon' => 'shield', 'module' => 'seguridad', 'adminOnly' => true],
+                    ['label' => 'Categorías', 'route' => 'categorias.index', 'icon' => 'tag', 'module' => 'categorias'],
+                    ['label' => 'Productos', 'route' => 'productos.index', 'icon' => 'box', 'module' => 'productos'],
+                    ['label' => 'Detalles de factura', 'route' => 'detallefacturas.index', 'icon' => 'chart', 'module' => 'detallefacturas'],
+                    ['label' => 'Facturas', 'route' => 'facturas.index', 'icon' => 'chart', 'module' => 'facturas'],
+                    ['label' => 'Proveedores', 'route' => 'proveedores.index', 'icon' => 'users', 'module' => 'proveedores'],
+                    ['label' => 'Inmobiliarios', 'route' => 'inmuebles.index', 'icon' => 'home', 'module' => 'inmuebles'],
+                    ['label' => 'Contratos', 'route' => 'contratos.index', 'icon' => 'history', 'module' => 'contratos'],
+                    ['label' => 'Actas', 'route' => 'actas.index', 'icon' => 'history', 'module' => 'actas'],
+                    ['label' => 'Reportes', 'route' => 'reports.index', 'icon' => 'chart', 'module' => 'reportes'],
+                    ['label' => 'Auditorías', 'route' => 'auditorias.index', 'icon' => 'history', 'module' => 'auditorias'],
                 ];
+                $usuarioActual = auth()->user();
+                $esAdministrador = $usuarioActual?->esAdministrador() ?? false;
             @endphp
 
             @foreach ($links as $link)
                 @php
-                    $permissionModule = explode('.', $link['route'])[0];
-                    $permissionModule = $permissionModule === 'auditoria' ? 'auditorias' : $permissionModule;
-                    $requiredPermission = $link['can'] ?? ('ver ' . $permissionModule);
-                    $nombreRol = mb_strtolower(trim(auth()->user()->rol?->nombre_rol ?? ''));
-                    $esAdministrador = $nombreRol === 'administrador' || auth()->user()->hasRole('administrador');
+                    $tienePermisoModulo = $esAdministrador || (
+                        $usuarioActual?->can('acceder ' . $link['module'])
+                        && $usuarioActual?->can('ver ' . $link['module'])
+                    );
                 @endphp
-                @continue(! ($link['always'] ?? false) && ! auth()->user()->can($requiredPermission) && ! $esAdministrador)
+                @continue(($link['adminOnly'] ?? false) ? ! $esAdministrador : ! $tienePermisoModulo)
                 @php
                     $active = Route::has($link['route']) && (
                         $link['route'] === 'home'

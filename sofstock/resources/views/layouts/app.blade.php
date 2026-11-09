@@ -93,6 +93,9 @@
                 @if (session('error'))
                     <x-alert type="error" class="mb-6">{{ session('error') }}</x-alert>
                 @endif
+                @if (session('warning'))
+                    <div class="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">{{ session('warning') }}</div>
+                @endif
 
                 @yield('content')
             </main>

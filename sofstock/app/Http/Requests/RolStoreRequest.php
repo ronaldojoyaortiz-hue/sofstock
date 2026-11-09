@@ -14,7 +14,19 @@ class RolStoreRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'nombre_rol' => ['required', 'string', 'max:500'],
+            'nombre_rol' => [
+                'required',
+                'string',
+                'max:500',
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    if (is_string($value) && mb_strtolower(trim($value)) === 'administrador') {
+                        $fail('El rol administrador está reservado para la cuenta inicial del sistema.');
+                    }
+                    if (is_string($value) && mb_strtolower(trim($value)) === 'secretaria') {
+                        $fail('Este rol no está disponible.');
+                    }
+                },
+            ],
             'descripcion' => ['nullable', 'string', 'max:500'],
         ];
     }

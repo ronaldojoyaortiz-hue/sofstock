@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Http\Controllers\AuthController;
 use App\Models\Rol;
 use App\Models\Usuario;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -58,6 +59,40 @@ class CambioContrasenaTest extends TestCase
             ->assertSessionHasErrors('contrasena_actual');
 
         $this->assertSame($contrasenaOriginal, $usuario->fresh()->contrasena);
+    }
+
+    public function test_al_recuperar_contrasena_usuario_puede_elegir_una_nueva_pregunta(): void
+    {
+        $usuario = $this->crearUsuario();
+        $preguntaAnterior = AuthController::PREGUNTAS_SEGURIDAD[0];
+        $preguntaNueva = AuthController::PREGUNTAS_SEGURIDAD[1];
+        $usuario->forceFill([
+            'pregunta_seguridad' => $preguntaAnterior,
+            'respuesta_seguridad' => Hash::make('respuesta anterior'),
+        ])->save();
+
+        $this->post(route('password.recovery.question'), ['correo' => $usuario->correo])
+            ->assertOk()
+            ->assertViewIs('auth.reset-password-security');
+
+        $this->post(route('password.recovery.reset'), [
+            'respuesta_seguridad' => 'respuesta anterior',
+            'contrasena' => 'nueva-clave-456',
+            'contrasena_confirmation' => 'nueva-clave-456',
+        ])->assertOk()
+            ->assertViewIs('auth.confirm-recovery-answer')
+            ->assertSee('name="pregunta_seguridad"', false);
+
+        $this->post(route('password.recovery.save-answer'), [
+            'pregunta_seguridad' => $preguntaNueva,
+            'respuesta_seguridad' => 'respuesta nueva',
+        ])->assertRedirect(route('login'))
+            ->assertSessionHas('success');
+
+        $usuario->refresh();
+        $this->assertSame($preguntaNueva, $usuario->pregunta_seguridad);
+        $this->assertTrue(Hash::check('respuesta nueva', $usuario->respuesta_seguridad));
+        $this->assertTrue(Hash::check('nueva-clave-456', $usuario->contrasena));
     }
 
     private function crearUsuario(): Usuario

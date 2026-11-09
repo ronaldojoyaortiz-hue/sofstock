@@ -7,7 +7,7 @@
     <div class="mb-6 flex items-center justify-between gap-4">
         <div>
             <h1 class="text-2xl font-bold text-slate-800">Permisos por rol</h1>
-            <p class="mt-1 text-sm text-slate-500">Administra qué permisos tiene cada rol.</p>
+            <p class="mt-1 text-sm text-slate-500">Define qué acciones puede realizar cada rol en cada módulo.</p>
         </div>
         @if ($showMatrix && $canManage)
             <x-button variant="secondary" href="{{ route('seguridad.permisos.roles') }}">Volver a roles</x-button>
@@ -111,39 +111,78 @@
             <div class="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4">
                 <div>
                     <h2 class="text-lg font-semibold capitalize text-slate-800">Permisos de {{ $selectedRole->name }}</h2>
-                    @if (! $canManage)
-                        <p class="mt-1 text-sm text-slate-500">Consulta los permisos asignados a este rol.</p>
-                    @elseif ($selectedRole->name === 'administrador')
-                        <p class="mt-1 text-sm text-slate-500">Selecciona los permisos que tendrá este rol. El administrador siempre podrá volver a esta pantalla.</p>
-                    @else
-                        <p class="mt-1 text-sm text-slate-500">Selecciona las acciones que este rol podrá realizar en cada módulo.</p>
-                    @endif
+                    <p class="mt-1 text-sm text-slate-500">
+                        @if ($canManage)
+                            Marca cada permiso por separado. “Ver módulo” permite entrar; “Leer datos” permite consultar la información.
+                        @else
+                            Aquí puedes consultar los permisos asignados a cada módulo.
+                        @endif
+                    </p>
                 </div>
                 <a href="{{ route('seguridad.permisos.roles') }}" class="text-sm font-medium text-slate-500 hover:text-slate-800">Cerrar</a>
             </div>
 
             @if ($canManage)
-                <form action="{{ route('seguridad.permisos.update', $selectedRole) }}" method="POST">
+                <form id="role-permissions-form" action="{{ route('seguridad.permisos.update', $selectedRole) }}" method="POST">
                     @csrf
                     @method('PUT')
 
                     <div class="space-y-5 p-5 sm:p-6">
                         @forelse ($permissions as $module => $modulePermissions)
-                            <section class="rounded-lg border border-slate-200">
-                                <h3 class="border-b border-slate-100 bg-slate-50 px-4 py-3 text-sm font-semibold capitalize text-slate-700">
-                                    {{ $module }}
-                                </h3>
-                                <div class="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3">
-                                    @foreach ($modulePermissions as $permission)
-                                        <label class="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 px-3 py-3 text-sm text-slate-700 transition hover:border-violet-300 hover:bg-violet-50">
-                                            <input type="checkbox" name="permissions[]" value="{{ $permission->id }}"
-                                                @checked($selectedRole->permissions->contains('id', $permission->id))
-                                                class="mt-0.5 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
-                                                aria-label="{{ $permissionLabels[$permission->id] ?? $permission->name }}">
-                                            <span>{{ $permissionLabels[$permission->id] ?? $permission->name }}</span>
-                                        </label>
-                                    @endforeach
+                            @php
+                                $availableActions = collect($modulePermissions['actions'])
+                                    ->filter(fn ($permission) => $permission !== null);
+                            @endphp
+                            <section class="overflow-hidden rounded-lg border border-slate-200">
+                                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 bg-slate-50 px-4 py-3">
+                                    <h3 class="text-sm font-semibold text-slate-700">{{ $modulePermissions['label'] }}</h3>
                                 </div>
+                                <div class="overflow-x-auto">
+                                    <table class="min-w-full divide-y divide-slate-100">
+                                        <thead>
+                                            <tr class="text-left text-xs font-medium uppercase tracking-wide text-slate-500">
+                                                <th class="px-4 py-3">Permiso</th>
+                                                @foreach ($availableActions as $action => $permission)
+                                                    <th class="px-4 py-3 text-center">
+                                                        {{ ['acceder' => 'Ver módulo', 'ver' => 'Leer datos', 'crear' => 'Crear', 'editar' => 'Modificar', 'eliminar' => 'Eliminar'][$action] }}
+                                                    </th>
+                                                @endforeach
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-slate-100 bg-white">
+                                            <tr>
+                                                <th class="px-4 py-3 text-left text-sm font-medium text-slate-700">Acceso y acciones</th>
+                                                @foreach ($availableActions as $action => $permission)
+                                                    <td class="px-4 py-3 text-center">
+                                                        <label class="inline-flex cursor-pointer items-center justify-center rounded-md p-2 hover:bg-violet-50">
+                                                            <input type="checkbox" name="permissions[]" value="{{ $permission->id }}"
+                                                                @checked($selectedRole->permissions->contains('id', $permission->id))
+                                                                class="h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
+                                                                aria-label="{{ $action }} {{ $modulePermissions['label'] }}"
+                                                                title="{{ $action }} {{ $modulePermissions['label'] }}">
+                                                        </label>
+                                                    </td>
+                                                @endforeach
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                @if ($modulePermissions['other']->isNotEmpty())
+                                    <div class="border-t border-slate-100 p-4">
+                                        <h4 class="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Permisos adicionales</h4>
+                                        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                            @foreach ($modulePermissions['other'] as $permission)
+                                                <label class="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 px-3 py-3 text-sm text-slate-700 transition hover:border-violet-300 hover:bg-violet-50">
+                                                    <input type="checkbox" name="permissions[]" value="{{ $permission->id }}"
+                                                        @checked($selectedRole->permissions->contains('id', $permission->id))
+                                                        class="mt-0.5 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
+                                                        aria-label="{{ $permissionLabels[$permission->id] ?? $permission->name }}">
+                                                    <span>{{ $permissionLabels[$permission->id] ?? $permission->name }}</span>
+                                                </label>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endif
                             </section>
                         @empty
                             <p class="text-sm text-slate-500">No hay permisos registrados para asignar.</p>
@@ -156,23 +195,32 @@
                 </form>
             @else
                 <div class="space-y-5 p-5 sm:p-6">
-                    @forelse ($permissions as $module => $modulePermissions)
+                    @forelse ($permissions as $modulePermissions)
                         @php
-                            $assignedPermissions = $modulePermissions
+                            $assignedActions = collect($modulePermissions['actions'])
+                                ->filter(fn ($permission) => $permission && $selectedRole->permissions->contains('id', $permission->id));
+                            $assignedOther = $modulePermissions['other']
                                 ->filter(fn ($permission) => $selectedRole->permissions->contains('id', $permission->id));
                         @endphp
                         <section class="rounded-lg border border-slate-200">
                             <h3 class="border-b border-slate-100 bg-slate-50 px-4 py-3 text-sm font-semibold capitalize text-slate-700">
-                                {{ $module }}
+                                {{ $modulePermissions['label'] }}
                             </h3>
                             <div class="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3">
-                                @forelse ($assignedPermissions as $permission)
+                                @forelse ($assignedActions as $action => $permission)
+                                    <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-3 text-sm text-emerald-800">
+                                        {{ ['acceder' => 'Ver módulo', 'ver' => 'Leer datos', 'crear' => 'Crear', 'editar' => 'Modificar', 'eliminar' => 'Eliminar'][$action] }}
+                                    </div>
+                                @empty
+                                    @if ($assignedOther->isEmpty())
+                                    <p class="text-sm text-slate-500">Sin permisos asignados en este módulo.</p>
+                                    @endif
+                                @endforelse
+                                @foreach ($assignedOther as $permission)
                                     <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-3 text-sm text-emerald-800">
                                         {{ $permissionLabels[$permission->id] ?? $permission->name }}
                                     </div>
-                                @empty
-                                    <p class="text-sm text-slate-500">Sin permisos asignados en este módulo.</p>
-                                @endforelse
+                                @endforeach
                             </div>
                         </section>
                     @empty

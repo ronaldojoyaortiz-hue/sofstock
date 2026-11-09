@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Repositories\AuditoriaRepository;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -34,7 +35,8 @@ class AuditoriaController extends Controller
         ]);
 
         $auditorias = $this->auditoriaRepository->listar(
-            $filtros
+            $filtros,
+            (int) $request->user()->getAuthIdentifier()
         );
 
         return view('auditorias.index', compact('auditorias'));
@@ -43,10 +45,11 @@ class AuditoriaController extends Controller
     /**
      * Mostrar el detalle de un registro de auditoría.
      */
-    public function show(int $id): View
+    public function show(Request $request, int $id): View
     {
         $auditoria = $this->auditoriaRepository->buscarPorId(
-            $id
+            $id,
+            (int) $request->user()->getAuthIdentifier()
         );
 
         abort_if(
@@ -56,5 +59,23 @@ class AuditoriaController extends Controller
         );
 
         return view('auditorias.show', compact('auditoria'));
+    }
+
+    public function destroy(Request $request, int $id): RedirectResponse
+    {
+        $auditoria = $this->auditoriaRepository->buscarPorId(
+            $id,
+            (int) $request->user()->getAuthIdentifier()
+        );
+
+        abort_if($auditoria === null, 404, 'El registro de auditoría no existe.');
+
+        $this->auditoriaRepository->ocultarParaUsuario(
+            $id,
+            (int) $request->user()->getAuthIdentifier()
+        );
+
+        return redirect()->route('auditorias.index')
+            ->with('success', 'La auditoría se ocultó de tu historial. Los demás usuarios todavía podrán verla.');
     }
 }

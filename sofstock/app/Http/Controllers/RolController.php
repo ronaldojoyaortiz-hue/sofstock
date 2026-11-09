@@ -9,7 +9,9 @@ class RolController extends Controller
 {
     public function index()
     {
-        $roles = Rol::all();
+        $roles = Rol::query()
+            ->whereRaw('LOWER(TRIM(nombre_rol)) != ?', ['secretaria'])
+            ->get();
 
         return view('roles.index', compact('roles'));
     }
@@ -42,6 +44,12 @@ class RolController extends Controller
     public function update(RolStoreRequest $request, string $id)
     {
         $rol = Rol::findOrFail($id);
+
+        if (mb_strtolower(trim($rol->nombre_rol)) === 'administrador') {
+            return redirect()->route('roles.index')
+                ->with('error', 'El rol administrador está protegido y no se puede modificar.');
+        }
+
         $rol->update($request->validated());
 
         return redirect()->route('roles.index')
@@ -50,7 +58,14 @@ class RolController extends Controller
 
     public function destroy(string $id)
     {
-        Rol::destroy($id);
+        $rol = Rol::findOrFail($id);
+
+        if (mb_strtolower(trim($rol->nombre_rol)) === 'administrador') {
+            return redirect()->route('roles.index')
+                ->with('error', 'El rol administrador está protegido y no se puede eliminar.');
+        }
+
+        $rol->delete();
 
         return redirect()->route('roles.index')
             ->with('success', 'Rol eliminado exitosamente.');

@@ -12,6 +12,10 @@ class Notificacion extends Model
 
     public const TIPO_STOCK_BAJO = 'stock_bajo';
 
+    public const TIPO_SOLICITUD_REGISTRO = 'solicitud_registro';
+
+    public const TIPO_CUENTA_DESACTIVADA = 'cuenta_desactivada';
+
     protected $table = 'notificaciones';
 
     protected $fillable = [

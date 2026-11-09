@@ -44,10 +44,6 @@
                 <dd class="mt-1 text-slate-800">{{ $role->created_at?->format('d/m/Y H:i') ?? 'No disponible' }}</dd>
             </div>
             <div>
-                <dt class="text-xs uppercase tracking-wide text-slate-500">Última actualización</dt>
-                <dd class="mt-1 text-slate-800">{{ $role->updated_at?->format('d/m/Y H:i') ?? 'No disponible' }}</dd>
-            </div>
-            <div>
                 <dt class="text-xs uppercase tracking-wide text-slate-500">Permisos asignados</dt>
                 <dd class="mt-1 font-medium text-slate-800">{{ $role->permissions->count() }}</dd>
             </div>

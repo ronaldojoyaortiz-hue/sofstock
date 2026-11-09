@@ -16,7 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->appendToGroup('web', \App\Http\Middleware\AuditarActividad::class);
         $middleware->alias([
             'permiso' => \App\Http\Middleware\Permiso::class,
-            'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
+            'solo_administrador' => \App\Http\Middleware\SoloAdministrador::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

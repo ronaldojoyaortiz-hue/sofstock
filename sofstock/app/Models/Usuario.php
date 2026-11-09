@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -11,6 +12,20 @@ use Spatie\Permission\Traits\HasRoles;
 class Usuario extends Authenticatable
 {
     use HasRoles;
+
+    public const TIPOS_DOCUMENTO = [
+        'CC',
+        'CE',
+        'TI',
+        'PAS',
+        'NIT',
+    ];
+
+    public const GENEROS = [
+        'Masculino',
+        'Femenino',
+        'Otro',
+    ];
 
     protected $table = 'usuarios';
 
@@ -36,6 +51,7 @@ class Usuario extends Authenticatable
         'fecha_actualizacion',
         'pregunta_seguridad',
         'respuesta_seguridad',
+        'estado_aprobacion',
     ];
 
     protected $hidden = [
@@ -58,6 +74,23 @@ class Usuario extends Authenticatable
     public function getAuthPassword(): string
     {
         return $this->contrasena;
+    }
+
+    public function scopeAdministradores(Builder $query): Builder
+    {
+        return $query->where(function (Builder $query): void {
+            $query->whereHas('rol', fn (Builder $role) => $role
+                ->whereRaw('LOWER(TRIM(nombre_rol)) = ?', ['administrador']))
+                ->orWhereHas('roles', fn (Builder $role) => $role
+                    ->where('guard_name', 'web')
+                    ->whereRaw('LOWER(TRIM(name)) = ?', ['administrador']));
+        });
+    }
+
+    public function esAdministrador(): bool
+    {
+        return mb_strtolower(trim($this->rol?->nombre_rol ?? '')) === 'administrador'
+            || $this->hasRole('administrador');
     }
 
     public function rol(): BelongsTo
