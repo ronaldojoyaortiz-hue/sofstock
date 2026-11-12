@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Categoria;
 use App\Models\Facturas;
 use App\Models\Producto;
-use App\Models\User;
+use App\Models\Usuario;
 use Tests\Unit\FacturaServiceTest;
 
 class DashboardController extends Controller
@@ -29,8 +29,8 @@ class DashboardController extends Controller
                     ->sum('total')
             )->values(),
             'users' => $months->map(
-                fn($month) => User::query()
-                    ->whereBetween('created_at', [
+                fn($month) => Usuario::query()
+                    ->whereBetween('fecha_registro', [
                         $month->copy()->startOfMonth(),
                         $month->copy()->endOfMonth(),
                     ])
@@ -41,7 +41,7 @@ class DashboardController extends Controller
         ];
 
         return view('dashboard.index', [
-            'totalUsers' => User::count(),
+            'totalUsers' => Usuario::count(),
             'totalProducts' => Producto::count(),
             'totalSales' => Facturas::query()
                 ->whereBetween('fecha', [now()->startOfMonth()->toDateString(), now()->toDateString()])

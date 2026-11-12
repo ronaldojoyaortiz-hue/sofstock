@@ -16,6 +16,8 @@ use Spatie\Permission\PermissionRegistrar;
 
 class SeguridadPermisosController extends Controller
 {
+    private const HIDDEN_PERMISSIONS = ['gestionar seguridad'];
+
     public function index(Request $request): View
     {
         return $this->roles($request);
@@ -25,8 +27,10 @@ class SeguridadPermisosController extends Controller
     {
         $assignments = Role::query()
             ->where('guard_name', 'web')
-            ->where('name', '!=', 'administrador')
-            ->with(['permissions' => fn ($query) => $query->where('guard_name', 'web')])
+            ->whereRaw('LOWER(TRIM(name)) != ?', ['administrador'])
+            ->with(['permissions' => fn ($query) => $query
+                ->where('guard_name', 'web')
+                ->whereNotIn('name', self::HIDDEN_PERMISSIONS)])
             ->orderBy('id')
             ->get()
             ->flatMap(fn (Role $role) => $role->permissions->map(fn (Permission $permission) => (object) [
@@ -48,11 +52,15 @@ class SeguridadPermisosController extends Controller
         $role = Role::query()
             ->where('guard_name', 'web')
             ->with([
-                'permissions' => fn ($query) => $query->where('guard_name', 'web')->orderBy('name'),
+                'permissions' => fn ($query) => $query
+                    ->where('guard_name', 'web')
+                    ->whereNotIn('name', self::HIDDEN_PERMISSIONS)
+                    ->orderBy('name'),
                 'users',
             ])
             ->findOrFail($role);
-        abort_if($role->name === 'administrador', 404);
+        abort_if(mb_strtolower(trim($role->name)) === 'administrador', 404);
+
         $legacyRole = LegacyRole::query()
             ->with('usuarios')
             ->where('nombre_rol', $role->name)
@@ -99,7 +107,7 @@ class SeguridadPermisosController extends Controller
     public function showAssignment(int $role, int $permission): View
     {
         $role = Role::query()->where('guard_name', 'web')->findOrFail($role);
-        abort_if($role->name === 'administrador', 404);
+        abort_if(mb_strtolower(trim($role->name)) === 'administrador', 404);
         $permission = $this->findWebPermission($permission);
         abort_unless($role->hasPermissionTo($permission), 404);
         $permissionLabel = $this->nombreVisiblePermiso($permission);
@@ -110,7 +118,7 @@ class SeguridadPermisosController extends Controller
     public function destroyAssignment(int $role, int $permission): RedirectResponse
     {
         $role = Role::query()->where('guard_name', 'web')->findOrFail($role);
-        abort_if($role->name === 'administrador', 404);
+        abort_if(mb_strtolower(trim($role->name)) === 'administrador', 404);
         $permission = $this->findWebPermission($permission);
         abort_unless($role->hasPermissionTo($permission), 404);
         $permissionLabel = $this->nombreVisiblePermiso($permission);
@@ -125,19 +133,47 @@ class SeguridadPermisosController extends Controller
 
     public function roles(Request $request): View
     {
-        $permissions = Permission::query()
+        LegacyRole::query()
+            ->whereRaw('LOWER(TRIM(nombre_rol)) != ?', ['secretaria'])
+            ->orderBy('id_rol')
+            ->get()
+            ->each(fn (LegacyRole $legacyRole) => Role::findOrCreate($legacyRole->nombre_rol, 'web'));
+
+        $allPermissions = Permission::query()
             ->where('guard_name', 'web')
+            ->whereNotIn('name', self::HIDDEN_PERMISSIONS)
             ->orderBy('name')
             ->get()
-            ->groupBy(fn (Permission $permission) => $this->moduloVisiblePermiso($permission));
-        $permissionLabels = Permission::query()
-            ->where('guard_name', 'web')
-            ->get()
+            ->values();
+        $permissionLabels = $allPermissions
             ->mapWithKeys(fn (Permission $permission) => [$permission->id => $this->nombreVisiblePermiso($permission)]);
+        $permissions = $allPermissions
+            ->groupBy(fn (Permission $permission) => $this->moduloVisiblePermiso($permission))
+            ->map(function ($modulePermissions, string $module): array {
+                $knownActions = ['acceder', 'ver', 'crear', 'editar', 'eliminar'];
+                $actions = collect($knownActions)->mapWithKeys(function (string $action) use ($module, $modulePermissions): array {
+                    $permission = $modulePermissions->first(
+                        fn (Permission $candidate): bool => $candidate->name === "{$action} {$module}"
+                    );
+
+                    return [$action => $permission];
+                });
+                $knownPermissionIds = $actions->filter()->map(fn (Permission $permission) => $permission->id);
+
+                return [
+                    'label' => $this->nombreVisibleModulo($module),
+                    'actions' => $actions,
+                    'other' => $modulePermissions
+                        ->reject(fn (Permission $permission) => $knownPermissionIds->contains($permission->id))
+                        ->values(),
+                ];
+            });
         $roles = Role::query()
-            ->with(['permissions' => fn ($query) => $query->where('guard_name', 'web')])
+            ->with(['permissions' => fn ($query) => $query
+                ->where('guard_name', 'web')
+                ->whereNotIn('name', self::HIDDEN_PERMISSIONS)])
             ->where('guard_name', 'web')
-            ->where('name', '!=', 'administrador')
+            ->whereRaw('LOWER(TRIM(name)) != ?', ['administrador'])
             ->orderBy('name')
             ->get();
         $selectedRole = $roles->firstWhere('id', (int) $request->query('role_id'))
@@ -153,7 +189,7 @@ class SeguridadPermisosController extends Controller
     {
         abort_unless($role->guard_name === 'web', 404);
 
-        if ($role->name === 'administrador') {
+        if (mb_strtolower(trim($role->name)) === 'administrador') {
             return redirect()->route('seguridad.permisos.roles')
                 ->with('error', 'Los permisos del rol administrador están protegidos.');
         }
@@ -169,6 +205,7 @@ class SeguridadPermisosController extends Controller
 
         $permissions = Permission::query()
             ->where('guard_name', 'web')
+            ->whereNotIn('name', self::HIDDEN_PERMISSIONS)
             ->whereIn('id', $validated['permissions'] ?? [])
             ->get();
 
@@ -187,13 +224,40 @@ class SeguridadPermisosController extends Controller
 
     private function nombreVisiblePermiso(Permission $permission): string
     {
-        return preg_replace('/^(ver|crear|editar|eliminar) reports$/u', '$1 reportes', $permission->name) ?? $permission->name;
+        [$action, $module] = array_pad(explode(' ', $permission->name, 2), 2, null);
+        $moduleLabel = $module ? $this->nombreVisibleModulo($module) : null;
+        $actionLabel = match ($action) {
+            'acceder' => 'Ver módulo',
+            'ver' => 'Leer datos',
+            'crear' => 'Crear',
+            'editar' => 'Modificar',
+            'eliminar' => 'Eliminar',
+            default => null,
+        };
+
+        return $actionLabel && $moduleLabel
+            ? "{$actionLabel} de {$moduleLabel}"
+            : ucfirst($permission->name);
     }
 
     private function moduloVisiblePermiso(Permission $permission): string
     {
-        $module = Str::afterLast($this->nombreVisiblePermiso($permission), ' ');
+        return Str::afterLast($permission->name, ' ');
+    }
 
-        return $module === 'reports' ? 'reportes' : $module;
+    private function nombreVisibleModulo(string $module): string
+    {
+        return match ($module) {
+            'reports' => 'Reportes',
+            'settings' => 'Configuración',
+            'inmuebles' => 'Inmuebles',
+            'detallefacturas' => 'Detalles de factura',
+            'categorias' => 'Categorías',
+            'notificaciones' => 'Notificaciones',
+            'auditorias' => 'Auditorías',
+            'dashboard' => 'Inicio',
+            'seguridad' => 'Seguridad',
+            default => ucfirst($module),
+        };
     }
 }

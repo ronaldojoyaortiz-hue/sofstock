@@ -9,14 +9,14 @@ class ActaRepository
 {
     public function paginate(int $perPage = 10): LengthAwarePaginator
     {
-        return Acta::with(['usuario', 'rol', 'inmueble', 'productos', 'firmas'])
+        return Acta::with(['usuario', 'rol', 'inmueble'])
             ->latest()
             ->paginate($perPage);
     }
 
     public function findOrFail(int $id): Acta
     {
-        return Acta::with(['usuario', 'rol', 'inmueble', 'productos', 'firmas'])->findOrFail($id);
+        return Acta::with(['usuario', 'rol', 'inmueble', 'firmante1Usuario', 'firmante2Usuario', 'firmante1Rol', 'firmante2Rol'])->findOrFail($id);
     }
 
     public function create(array $data): Acta

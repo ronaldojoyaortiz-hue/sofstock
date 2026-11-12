@@ -17,21 +17,21 @@ class SeguridadSeeder extends Seeder
         $permissionRegistrar->forgetCachedPermissions();
 
         $permissionsByModule = [
-            'seguridad' => ['gestionar'],
-            'dashboard' => ['ver'],
-            'usuarios' => ['ver', 'crear', 'editar', 'eliminar'],
-            'roles' => ['ver', 'crear', 'editar', 'eliminar'],
-            'categorias' => ['ver', 'crear', 'editar', 'eliminar'],
-            'productos' => ['ver', 'crear', 'editar', 'eliminar'],
-            'facturas' => ['ver', 'crear', 'editar', 'eliminar'],
-            'proveedores' => ['ver', 'crear', 'editar', 'eliminar'],
-            'inmuebles' => ['ver', 'crear', 'editar', 'eliminar'],
-            'contratos' => ['ver', 'crear', 'editar', 'eliminar'],
-            'actas' => ['ver', 'crear', 'editar', 'eliminar'],
-            'auditorias' => ['ver'],
-            'reportes' => ['ver', 'crear', 'editar', 'eliminar'],
-            'settings' => ['ver', 'editar'],
-            'notificaciones' => ['ver', 'crear', 'eliminar'],
+            'dashboard' => ['acceder', 'ver'],
+            'usuarios' => ['acceder', 'ver', 'crear', 'editar', 'eliminar'],
+            'roles' => ['acceder', 'ver', 'crear', 'editar', 'eliminar'],
+            'categorias' => ['acceder', 'ver', 'crear', 'editar', 'eliminar'],
+            'productos' => ['acceder', 'ver', 'crear', 'editar', 'eliminar'],
+            'facturas' => ['acceder', 'ver', 'crear', 'editar', 'eliminar'],
+            'detallefacturas' => ['acceder', 'ver', 'crear', 'editar', 'eliminar'],
+            'proveedores' => ['acceder', 'ver', 'crear', 'editar', 'eliminar'],
+            'inmuebles' => ['acceder', 'ver', 'crear', 'editar', 'eliminar'],
+            'contratos' => ['acceder', 'ver', 'crear', 'editar', 'eliminar'],
+            'actas' => ['acceder', 'ver', 'crear', 'editar', 'eliminar'],
+            'auditorias' => ['acceder', 'ver', 'eliminar'],
+            'reportes' => ['acceder', 'ver', 'crear', 'editar', 'eliminar'],
+            'settings' => ['acceder', 'ver', 'editar'],
+            'notificaciones' => ['acceder', 'ver', 'crear', 'eliminar'],
         ];
 
         foreach ($permissionsByModule as $module => $actions) {
@@ -55,7 +55,7 @@ class SeguridadSeeder extends Seeder
                 Usuario::query()
                     ->where('id_rol', $legacyRole->id_rol)
                     ->get()
-                    ->each(fn (Usuario $usuario) => $usuario->syncRoles([$role]));
+                    ->each(fn(Usuario $usuario) => $usuario->syncRoles([$role]));
             });
 
         $permissionRegistrar->forgetCachedPermissions();

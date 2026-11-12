@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Producto extends Model
 {
@@ -21,8 +22,9 @@ class Producto extends Model
         'unidad_base',
         'precio_base',
         'activo',
+        'fecha_caducidad',
         'fecha_registro',
-        'fecha_actualizacion'
+        'fecha_actualizacion',
     ];
 
     protected $casts = [
@@ -30,9 +32,17 @@ class Producto extends Model
         'stock_minimo' => 'integer',
         'precio_base' => 'decimal:2',
         'activo' => 'boolean',
+        'fecha_caducidad' => 'date',
         'fecha_registro' => 'datetime',
         'fecha_actualizacion' => 'datetime',
     ];
+
+    public function getEstadoAttribute(): string
+    {
+        return (float) ($this->attributes['stock_actual'] ?? 0) > 0
+            ? 'Disponible'
+            : 'Agotado';
+    }
 
     public function categoria()
     {
@@ -47,5 +57,17 @@ class Producto extends Model
     public function detallesFactura()
     {
         return $this->hasMany(DetalleFactura::class, 'id_producto', 'id');
+    }
+
+    public function usuariosDestinatariosAlertaStock(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Usuario::class,
+            'producto_alerta_stock_usuario',
+            'id_producto',
+            'id_usuario',
+            'id',
+            'id'
+        )->withTimestamps();
     }
 }

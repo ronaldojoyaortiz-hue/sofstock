@@ -17,10 +17,22 @@
             </p>
         </div>
 
-        <a href="{{ route('auditorias.index') }}"
-           class="inline-flex items-center justify-center rounded-lg border border-gray-300 px-4 py-2 font-medium text-gray-700 transition hover:bg-gray-100">
-            Volver al historial
-        </a>
+        <div class="flex flex-wrap gap-2">
+            @can('eliminar auditorias')
+                <form method="POST" action="{{ route('auditorias.destroy', $auditoria->id_auditoria) }}"
+                    onsubmit="return confirm('La auditoría solo se ocultará de tu historial. Los demás usuarios seguirán viéndola. ¿Continuar?')">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="inline-flex items-center justify-center rounded-lg border border-red-200 px-4 py-2 font-medium text-red-700 transition hover:bg-red-50">
+                        Ocultar de mi historial
+                    </button>
+                </form>
+            @endcan
+            <a href="{{ route('auditorias.index') }}"
+               class="inline-flex items-center justify-center rounded-lg border border-gray-300 px-4 py-2 font-medium text-gray-700 transition hover:bg-gray-100">
+                Volver al historial
+            </a>
+        </div>
     </div>
 
     {{-- Información general --}}

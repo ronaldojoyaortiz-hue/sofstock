@@ -35,7 +35,7 @@ class ReporteController extends Controller
             'reportes' => Schema::hasTable('reportes_generados')
                 ? ReporteGenerado::query()->latest()->paginate(10)
                 : collect(),
-            'productos' => Producto::query()->where('activo', true)->orderBy('nombre')->get(['id', 'nombre', 'stock_actual']),
+            'productos' => Producto::query()->where('activo', true)->orderBy('nombre')->get(['id', 'nombre', 'stock_actual', 'precio_base']),
             'fechaPredeterminada' => now()->toDateString(),
         ]);
     }
@@ -239,7 +239,7 @@ class ReporteController extends Controller
             if ($tablasFinancierasListas) {
                 fputcsv($archivo, ['Inversión en productos', number_format($inversiones, 2, '.', '')], ';');
                 fputcsv($archivo, ['Otros gastos', number_format($otrosGastos, 2, '.', '')], ';');
-                fputcsv($archivo, ['Pérdida por productos dañados', number_format($perdidaProductos, 2, '.', '')], ';');
+                fputcsv($archivo, ['Pérdida por mermas de productos', number_format($perdidaProductos, 2, '.', '')], ';');
                 fputcsv($archivo, ['Ganancia / pérdida', number_format($ingresos - $inversiones - $otrosGastos - $perdidaProductos, 2, '.', '')], ';');
                 if ($periodoMensual && $presupuesto) {
                     fputcsv($archivo, ['Presupuesto inicial', number_format((float) $presupuesto->presupuesto_inicial, 2, '.', '')], ';');
@@ -262,7 +262,7 @@ class ReporteController extends Controller
                 ], ';');
             }
             fputcsv($archivo, [], ';');
-            fputcsv($archivo, ['Productos dañados o vencidos', 'Cantidad', 'Motivo', 'Fecha', 'Valor perdido'], ';');
+            fputcsv($archivo, ['Mermas de productos', 'Cantidad', 'Motivo', 'Fecha', 'Valor perdido'], ';');
             foreach ($mermas as $merma) {
                 fputcsv($archivo, [
                     $merma->producto?->nombre ?? 'Producto eliminado',
@@ -374,7 +374,6 @@ class ReporteController extends Controller
             'fecha' => ['required', 'date', 'before_or_equal:today'],
             'id_producto' => ['required', 'integer', 'exists:productos,id'],
             'cantidad' => ['required', 'integer', 'min:1'],
-            'valor_perdida' => ['required', 'numeric', 'gt:0', 'max:999999999999.99'],
             'motivo' => ['required', 'string', 'max:180'],
         ]);
 
@@ -389,18 +388,25 @@ class ReporteController extends Controller
                 ]);
             }
 
+            $valorPerdida = round((float) $producto->precio_base * $cantidad, 2);
+            if ($valorPerdida > 999999999999.99) {
+                throw ValidationException::withMessages([
+                    'cantidad' => 'El valor calculado de la pérdida supera el máximo permitido.',
+                ]);
+            }
+
             $producto->decrement('stock_actual', $cantidad);
             MermaProducto::query()->create([
                 'id_producto' => $producto->getKey(),
                 'fecha' => $datos['fecha'],
                 'cantidad' => $cantidad,
-                'valor_perdida' => $datos['valor_perdida'],
+                'valor_perdida' => $valorPerdida,
                 'motivo' => $datos['motivo'],
             ]);
         });
 
         return redirect()->route('reports.index')
-            ->with('success', 'El producto dañado se registró y se descontó del stock.');
+            ->with('success', 'La merma se registró y se descontó del stock.');
     }
 
     private function validarFiltros(Request $request): array

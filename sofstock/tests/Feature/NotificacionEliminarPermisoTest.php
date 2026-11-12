@@ -68,6 +68,24 @@ class NotificacionEliminarPermisoTest extends TestCase
             $table->string('contrasena');
             $table->unsignedBigInteger('id_rol')->nullable();
             $table->boolean('activo')->nullable();
+            $table->string('pregunta_seguridad')->nullable();
+            $table->string('respuesta_seguridad')->nullable();
+        });
+
+        Schema::create('auditorias', function (Blueprint $table): void {
+            $table->id('id_auditoria');
+            $table->unsignedBigInteger('id_usuario')->nullable();
+            $table->string('accion');
+            $table->string('modulo');
+            $table->text('descripcion');
+            $table->string('tabla_afectada')->nullable();
+            $table->string('id_registro_afectado')->nullable();
+            $table->json('datos_anteriores')->nullable();
+            $table->json('datos_nuevos')->nullable();
+            $table->string('motivo')->nullable();
+            $table->string('direccion_ip')->nullable();
+            $table->text('user_agent')->nullable();
+            $table->timestamp('created_at')->nullable();
         });
 
         Schema::create('notificaciones', function (Blueprint $table): void {
@@ -84,6 +102,7 @@ class NotificacionEliminarPermisoTest extends TestCase
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         Schema::dropIfExists('notificaciones');
+        Schema::dropIfExists('auditorias');
         Schema::dropIfExists('usuarios');
         Schema::dropIfExists('roles');
         Schema::dropIfExists('model_has_permissions');
@@ -97,7 +116,10 @@ class NotificacionEliminarPermisoTest extends TestCase
 
     public function test_user_without_delete_permission_cannot_delete_a_notification(): void
     {
+        $role = Role::create(['name' => 'socios', 'guard_name' => 'web']);
+        $role->givePermissionTo(Permission::create(['name' => 'acceder notificaciones', 'guard_name' => 'web']));
         $usuario = $this->crearUsuario();
+        $usuario->assignRole($role);
         $notificacion = $this->crearNotificacion();
 
         $this->actingAs($usuario)
@@ -110,8 +132,10 @@ class NotificacionEliminarPermisoTest extends TestCase
     public function test_user_with_delete_permission_can_delete_a_notification(): void
     {
         $role = Role::create(['name' => 'socios', 'guard_name' => 'web']);
-        $permission = Permission::create(['name' => 'eliminar notificaciones', 'guard_name' => 'web']);
-        $role->givePermissionTo($permission);
+        $role->givePermissionTo([
+            Permission::create(['name' => 'acceder notificaciones', 'guard_name' => 'web']),
+            Permission::create(['name' => 'eliminar notificaciones', 'guard_name' => 'web']),
+        ]);
         $usuario = $this->crearUsuario();
         $usuario->assignRole($role);
         $notificacion = $this->crearNotificacion();
@@ -138,6 +162,8 @@ class NotificacionEliminarPermisoTest extends TestCase
             'correo' => uniqid('usuario-', true) . '@example.test',
             'contrasena' => 'password',
             'id_rol' => $legacyRoleId,
+            'pregunta_seguridad' => 'Pregunta de prueba',
+            'respuesta_seguridad' => 'respuesta',
         ]));
     }
 

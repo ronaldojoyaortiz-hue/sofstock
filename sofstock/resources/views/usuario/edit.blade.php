@@ -70,8 +70,6 @@
                 @enderror
             </div>
             <x-input name="documento" label="Número de documento" :value="old('documento', $usuario->documento)" />
-            <x-password-input name="contrasena" label="Nueva contraseña" hint="Déjala vacía para conservar la contraseña actual." />
-            <x-password-input name="contrasena_confirmation" label="Confirmar nueva contraseña" />
 
             <div>
                 <label for="id_rol" class="mb-1.5 block text-sm font-medium text-slate-700">Rol</label>
@@ -86,13 +84,21 @@
                 @enderror
             </div>
 
-            <label class="flex items-center gap-2 text-sm text-slate-700">
-                <input type="checkbox" name="activo" value="1" @checked(old('activo', $usuario->activo) == '1') class="rounded border-slate-300">
-                Usuario activo
-            </label>
-            @error('activo')
-                <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
-            @enderror
+            @if (auth()->user()?->esAdministrador())
+                <div>
+                    <label for="activo" class="mb-1.5 block text-sm font-medium text-slate-700">Estado de la cuenta</label>
+                    <select id="activo" name="activo" required class="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm">
+                        <option value="1" @selected((string) old('activo', (int) $usuario->activo) === '1')>Activo</option>
+                        <option value="0" @selected((string) old('activo', (int) $usuario->activo) === '0')>Inactivo</option>
+                    </select>
+                    @error('activo')
+                        <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
+                    @enderror
+                    @if ((int) auth()->id() === (int) $usuario->id)
+                        <p class="mt-1.5 text-xs text-slate-500">Para desactivar tu propia cuenta, usa la opción “Mi cuenta”.</p>
+                    @endif
+                </div>
+            @endif
 
             <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                 <x-button variant="secondary" href="{{ route('usuarios.index') }}">Cancelar</x-button>

@@ -48,6 +48,12 @@
 
                             <p class="whitespace-pre-line text-sm leading-6 text-slate-600">{{ $notificacion->mensaje }}</p>
 
+                            @if ($notificacion->tipo === \App\Models\Notificacion::TIPO_SOLICITUD_REGISTRO && $esAdministrador)
+                                <a href="{{ route('registration-requests.index') }}" class="mt-3 inline-flex text-sm font-semibold text-primary-700 hover:text-primary-900">
+                                    Revisar solicitudes de registro
+                                </a>
+                            @endif
+
                             @if ($notificacion->fecha_evento)
                                 <p class="mt-3 text-sm font-medium text-slate-600">
                                     Fecha del evento: {{ $notificacion->fecha_evento->format('d/m/Y H:i') }}

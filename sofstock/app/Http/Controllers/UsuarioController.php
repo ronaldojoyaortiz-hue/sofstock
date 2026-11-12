@@ -2,36 +2,29 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Usuario;
+use App\Models\Notificacion;
 use App\Models\Rol;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Crypt;
+use App\Models\Usuario;
 use Illuminate\Contracts\Encryption\DecryptException;
-use Illuminate\Validation\Rule;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class UsuarioController extends Controller
 {
-    private const TIPOS_DOCUMENTO = [
-        'CC',
-        'CE',
-        'TI',
-        'PAS',
-        'NIT',
-    ];
-
-    private const GENEROS = [
-        'Masculino',
-        'Femenino',
-        'Otro',
-    ];
+    public function account(Request $request)
+    {
+        return view('usuario.account', ['usuario' => $request->user()]);
+    }
 
     private function esAdministrador(): bool
     {
-        return strtolower(
-            auth()->user()?->rol?->nombre_rol ?? ''
-        ) === 'administrador';
+        return auth()->user()?->esAdministrador() ?? false;
     }
 
     private function autorizarUsuario($id): void
@@ -68,12 +61,15 @@ class UsuarioController extends Controller
     {
         $this->autorizarAdministrador();
 
-        $roles = Rol::orderBy('nombre_rol')->get();
+        $roles = Rol::query()
+            ->whereRaw('LOWER(TRIM(nombre_rol)) NOT IN (?, ?, ?)', ['administrador', 'pendiente', 'secretaria'])
+            ->orderBy('nombre_rol')
+            ->get();
 
         return view('usuario.create', [
             'roles' => $roles,
-            'tiposDocumento' => self::TIPOS_DOCUMENTO,
-            'generos' => self::GENEROS,
+            'tiposDocumento' => Usuario::TIPOS_DOCUMENTO,
+            'generos' => Usuario::GENEROS,
         ]);
     }
 
@@ -94,7 +90,7 @@ class UsuarioController extends Controller
             'direccion' => ['nullable', 'string', 'max:255'],
             'genero' => [
                 'nullable',
-                Rule::in(self::GENEROS),
+                Rule::in(Usuario::GENEROS),
             ],
             'genero_detalle' => [
                 'nullable',
@@ -103,7 +99,7 @@ class UsuarioController extends Controller
             ],
             'tipo_documento' => [
                 'nullable',
-                Rule::in(self::TIPOS_DOCUMENTO),
+                Rule::in(Usuario::TIPOS_DOCUMENTO),
             ],
             'documento' => [
                 'nullable',
@@ -119,9 +115,13 @@ class UsuarioController extends Controller
             ],
             'id_rol' => [
                 'required',
-                'exists:roles,id_rol',
+                Rule::exists('roles', 'id_rol')->where(
+                    fn ($query) => $query->whereRaw(
+                        'LOWER(TRIM(nombre_rol)) NOT IN (?, ?, ?)',
+                        ['administrador', 'pendiente', 'secretaria']
+                    )
+                ),
             ],
-            'activo' => ['nullable', 'boolean'],
         ]);
 
         $contrasenaOriginal = $validated['contrasena'];
@@ -152,7 +152,7 @@ class UsuarioController extends Controller
 
         $contrasenaVisible = null;
 
-        if (!empty($usuario->contrasena_cifrada)) {
+        if (! empty($usuario->contrasena_cifrada)) {
             try {
                 $contrasenaVisible = Crypt::decryptString(
                     $usuario->contrasena_cifrada
@@ -175,7 +175,14 @@ class UsuarioController extends Controller
         $usuario = Usuario::findOrFail($id);
 
         if ($this->esAdministrador()) {
-            $roles = Rol::orderBy('nombre_rol')->get();
+            $roles = Rol::query()
+                ->whereRaw('LOWER(TRIM(nombre_rol)) NOT IN (?, ?, ?)', ['administrador', 'pendiente', 'secretaria'])
+                ->orderBy('nombre_rol')
+                ->get();
+
+            if ($usuario->esAdministrador() && $usuario->rol) {
+                $roles->prepend($usuario->rol);
+            }
         } else {
             $roles = collect();
         }
@@ -183,8 +190,8 @@ class UsuarioController extends Controller
         return view('usuario.edit', [
             'usuario' => $usuario,
             'roles' => $roles,
-            'tiposDocumento' => self::TIPOS_DOCUMENTO,
-            'generos' => self::GENEROS,
+            'tiposDocumento' => Usuario::TIPOS_DOCUMENTO,
+            'generos' => Usuario::GENEROS,
         ]);
     }
 
@@ -208,7 +215,7 @@ class UsuarioController extends Controller
                 'direccion' => ['nullable', 'string', 'max:255'],
                 'genero' => [
                     'nullable',
-                    Rule::in(self::GENEROS),
+                    Rule::in(Usuario::GENEROS),
                 ],
                 'genero_detalle' => [
                     'nullable',
@@ -217,7 +224,7 @@ class UsuarioController extends Controller
                 ],
                 'tipo_documento' => [
                     'nullable',
-                    Rule::in(self::TIPOS_DOCUMENTO),
+                    Rule::in(Usuario::TIPOS_DOCUMENTO),
                 ],
                 'documento' => [
                     'nullable',
@@ -225,32 +232,19 @@ class UsuarioController extends Controller
                     'max:30',
                     Rule::unique('usuarios', 'documento')->ignore($usuario->id, 'id'),
                 ],
-                'contrasena' => [
-                    'nullable',
-                    'string',
-                    'min:8',
-                    'confirmed',
-                ],
                 'id_rol' => [
                     'required',
-                    'exists:roles,id_rol',
+                    $usuario->esAdministrador()
+                        ? Rule::in([$usuario->id_rol])
+                        : Rule::exists('roles', 'id_rol')->where(
+                            fn ($query) => $query->whereRaw(
+                                'LOWER(TRIM(nombre_rol)) NOT IN (?, ?, ?)',
+                                ['administrador', 'pendiente', 'secretaria']
+                            )
+                        ),
                 ],
-                'activo' => ['nullable', 'boolean'],
+                'activo' => ['required', 'boolean'],
             ]);
-
-            if (!empty($validated['contrasena'])) {
-                $contrasenaOriginal = $validated['contrasena'];
-
-                $validated['contrasena'] = Hash::make(
-                    $contrasenaOriginal
-                );
-
-                $validated['contrasena_cifrada'] = Crypt::encryptString(
-                    $contrasenaOriginal
-                );
-            } else {
-                unset($validated['contrasena']);
-            }
 
             $validated['activo'] = $request->boolean('activo');
         } else {
@@ -267,7 +261,7 @@ class UsuarioController extends Controller
                 'direccion' => ['nullable', 'string', 'max:255'],
                 'genero' => [
                     'nullable',
-                    Rule::in(self::GENEROS),
+                    Rule::in(Usuario::GENEROS),
                 ],
                 'genero_detalle' => [
                     'nullable',
@@ -276,7 +270,7 @@ class UsuarioController extends Controller
                 ],
                 'tipo_documento' => [
                     'nullable',
-                    Rule::in(self::TIPOS_DOCUMENTO),
+                    Rule::in(Usuario::TIPOS_DOCUMENTO),
                 ],
                 'documento' => [
                     'nullable',
@@ -292,8 +286,47 @@ class UsuarioController extends Controller
         }
 
         $validated['fecha_actualizacion'] = now();
+        $estadoActivoSolicitado = $validated['activo'] ?? $usuario->activo;
 
-        $usuario->update($validated);
+        $actualizado = DB::transaction(function () use (
+            $usuario,
+            $validated,
+            $estadoActivoSolicitado
+        ): bool {
+            $usuarioBloqueado = Usuario::query()
+                ->lockForUpdate()
+                ->findOrFail($usuario->id);
+
+            if (
+                $usuarioBloqueado->esAdministrador() &&
+                $usuarioBloqueado->activo &&
+                ! $estadoActivoSolicitado &&
+                (
+                    (int) $usuarioBloqueado->id === (int) auth()->id() ||
+                    ! Usuario::administradores()
+                        ->where('activo', true)
+                        ->where('usuarios.id', '!=', $usuarioBloqueado->id)
+                        ->lockForUpdate()
+                        ->exists()
+                )
+            ) {
+                return false;
+            }
+
+            $usuarioBloqueado->update($validated);
+
+            return true;
+        });
+
+        if (! $actualizado) {
+            return back()
+                ->withErrors([
+                    'activo' => (int) $usuario->id === (int) auth()->id()
+                        ? 'Para desactivar tu propia cuenta, usa la opción “Mi cuenta”.'
+                        : 'No se puede desactivar al único administrador activo.',
+                ])
+                ->withInput();
+        }
 
         return redirect()
             ->route('usuarios.show', $usuario->id)
@@ -324,12 +357,71 @@ class UsuarioController extends Controller
 
     public function destroy($id)
     {
+        $this->autorizarAdministrador();
         $usuario = Usuario::findOrFail($id);
+
+        if ($usuario->esAdministrador()) {
+            if (Usuario::administradores()->count() <= 1) {
+                return redirect()->route('usuarios.index')
+                    ->with('error', 'No se puede eliminar al único administrador del sistema.');
+            }
+        }
 
         $usuario->delete();
 
         return redirect()
             ->route('usuarios.index')
             ->with('success', 'Usuario eliminado correctamente.');
+    }
+
+    public function deactivateOwnAccount(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'contrasena_actual' => ['required', 'current_password:web'],
+            'confirmar_desactivacion' => ['required', 'accepted'],
+        ]);
+
+        $usuario = $request->user();
+        $desactivado = DB::transaction(function () use ($usuario): bool {
+            $usuario = Usuario::query()->lockForUpdate()->findOrFail($usuario->id);
+            $administradores = Usuario::administradores()
+                ->where('activo', true)
+                ->where('usuarios.id', '!=', $usuario->id)
+                ->lockForUpdate()
+                ->get(['usuarios.id']);
+
+            if ($administradores->isEmpty()) {
+                return false;
+            }
+
+            $usuario->forceFill([
+                'activo' => false,
+                'fecha_actualizacion' => now(),
+            ])->save();
+
+            $notificacion = Notificacion::create([
+                'usuario_emisor_id' => $usuario->id,
+                'titulo' => 'Usuario desactivó su cuenta',
+                'mensaje' => "{$usuario->nombre} {$usuario->apellido} ({$usuario->correo}) desactivó su cuenta. Un administrador puede reactivarla desde Usuarios.",
+                'tipo' => Notificacion::TIPO_CUENTA_DESACTIVADA,
+                'datos' => ['usuario_id' => $usuario->id],
+            ]);
+            $notificacion->usuariosDestinatarios()->sync($administradores->modelKeys());
+
+            return true;
+        });
+
+        if (! $desactivado) {
+            return back()->withErrors([
+                'contrasena_actual' => 'No se puede desactivar la cuenta porque no hay otro administrador activo que pueda reactivarla.',
+            ]);
+        }
+
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()->route('login')
+            ->with('success', 'Tu cuenta quedó desactivada. Un administrador puede reactivarla.');
     }
 }

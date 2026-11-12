@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Rol as LegacyRole;
 use App\Models\Usuario;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -66,7 +67,9 @@ class SeguridadPermisosTest extends TestCase
             $table->string('correo');
             $table->string('contrasena');
             $table->unsignedBigInteger('id_rol')->nullable();
-            $table->boolean('activo')->nullable();
+            $table->boolean('activo')->default(true);
+            $table->string('pregunta_seguridad')->nullable();
+            $table->string('respuesta_seguridad')->nullable();
         });
 
         Schema::create('auditorias', function (Blueprint $table): void {
@@ -102,13 +105,27 @@ class SeguridadPermisosTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_administrator_can_assign_any_permission_and_keep_managing_permissions(): void
+    public function test_administrator_can_manage_other_roles_but_is_not_available_for_permission_management(): void
     {
         $administratorRole = Role::create(['name' => 'administrador', 'guard_name' => 'web']);
         $memberRole = Role::create(['name' => 'socios', 'guard_name' => 'web']);
         $manageSecurity = Permission::create(['name' => 'gestionar seguridad', 'guard_name' => 'web']);
         $customPermission = Permission::create(['name' => 'exportar reportes', 'guard_name' => 'web']);
-        $memberRole->givePermissionTo($customPermission);
+        $accessProducts = Permission::create(['name' => 'acceder productos', 'guard_name' => 'web']);
+        $readProducts = Permission::create(['name' => 'ver productos', 'guard_name' => 'web']);
+        $createProducts = Permission::create(['name' => 'crear productos', 'guard_name' => 'web']);
+        $editProducts = Permission::create(['name' => 'editar productos', 'guard_name' => 'web']);
+        $deleteProducts = Permission::create(['name' => 'eliminar productos', 'guard_name' => 'web']);
+        $readInvoiceDetails = Permission::create(['name' => 'ver detallefacturas', 'guard_name' => 'web']);
+        $memberRole->givePermissionTo([
+            $customPermission,
+            $accessProducts,
+            $manageSecurity,
+            $readInvoiceDetails,
+            $createProducts,
+            $editProducts,
+            $deleteProducts,
+        ]);
         $administratorRole->givePermissionTo($manageSecurity);
 
         $administrator = Usuario::withoutEvents(fn () => Usuario::create([
@@ -116,6 +133,9 @@ class SeguridadPermisosTest extends TestCase
             'apellido' => 'Prueba',
             'correo' => 'admin@example.test',
             'contrasena' => 'password',
+            'pregunta_seguridad' => 'test',
+            'respuesta_seguridad' => 'respuesta',
+            'activo' => true,
         ]));
         $administrator->assignRole($administratorRole);
         $this->actingAs($administrator);
@@ -125,41 +145,94 @@ class SeguridadPermisosTest extends TestCase
             ->assertSee('Ver información completa del rol socios')
             ->assertSee('Editar permisos de socios')
             ->assertSee('Eliminar rol socios')
+            ->assertDontSee('Ver información completa del rol administrador')
             ->assertDontSee('exportar reportes')
             ->assertDontSee('name="permissions[]"');
+
+        $this->get(route('seguridad.permisos.roles.show', $administratorRole))
+            ->assertNotFound();
 
         $this->get(route('seguridad.permisos.roles.show', $memberRole))
             ->assertOk()
             ->assertSee('ID del rol de seguridad')
             ->assertSee('Permisos asignados')
-            ->assertSee('exportar reportes');
+            ->assertSee('Exportar reportes');
 
         $this->get(route('seguridad.permisos.roles', [
             'role_id' => $memberRole->id,
             'gestionar' => 1,
         ]))
             ->assertOk()
-            ->assertSee('exportar reportes');
+            ->assertSee('Ver módulo')
+            ->assertSee('Leer datos')
+            ->assertSee('Crear')
+            ->assertSee('Modificar')
+            ->assertSee('Eliminar')
+            ->assertDontSee('Seleccionar todos los permisos')
+            ->assertDontSee('Seleccionar todos de Productos')
+            ->assertDontSee('Seleccionar todos de Configuración')
+            ->assertSee('Detalles de factura')
+            ->assertDontSee('Seleccionar todos de Detalles de factura')
+            ->assertSee('value="'.$readInvoiceDetails->id.'"', false)
+            ->assertSee('Exportar reportes')
+            ->assertDontSee('gestionar seguridad')
+            ->assertDontSee('Seguridad')
+            ->assertSee('name="permissions[]"', false)
+            ->assertSee('value="'.$accessProducts->id.'"', false)
+            ->assertSee('value="'.$readProducts->id.'"', false);
 
         $this->put(route('seguridad.permisos.update', $memberRole), [
-            'permissions' => [$customPermission->id],
+            'permissions' => [$customPermission->id, $readProducts->id],
         ])->assertRedirect(route('seguridad.permisos.roles', [
             'role_id' => $memberRole->id,
             'gestionar' => 1,
         ]));
 
         $this->assertTrue($memberRole->fresh()->hasPermissionTo($customPermission));
+        $this->assertTrue($memberRole->fresh()->hasPermissionTo($readProducts));
+        $this->assertFalse($memberRole->fresh()->hasPermissionTo($accessProducts));
+        $this->assertFalse($memberRole->fresh()->hasPermissionTo($manageSecurity));
 
         $this->put(route('seguridad.permisos.update', $administratorRole), [
             'permissions' => [$customPermission->id],
-        ])->assertRedirect(route('seguridad.permisos.roles', [
-            'role_id' => $administratorRole->id,
-            'gestionar' => 1,
+        ])->assertRedirect(route('seguridad.permisos.roles'))
+            ->assertSessionHas('error');
+
+        $this->assertFalse($administratorRole->fresh()->hasPermissionTo($customPermission));
+        $this->assertTrue($administratorRole->fresh()->hasPermissionTo($manageSecurity));
+        $this->get(route('seguridad.permisos.index'))->assertOk();
+    }
+
+    public function test_new_legacy_roles_are_synchronized_and_displayed_in_permission_management(): void
+    {
+        $administratorRole = Role::create(['name' => 'administrador', 'guard_name' => 'web']);
+        $manageSecurity = Permission::create(['name' => 'gestionar seguridad', 'guard_name' => 'web']);
+        $administratorRole->givePermissionTo($manageSecurity);
+        $administrator = Usuario::withoutEvents(fn () => Usuario::create([
+            'nombre' => 'Admin',
+            'apellido' => 'Prueba',
+            'correo' => 'admin@example.test',
+            'contrasena' => 'password',
+            'pregunta_seguridad' => 'test',
+            'respuesta_seguridad' => 'respuesta',
+            'activo' => true,
+        ]));
+        $administrator->assignRole($administratorRole);
+        $this->actingAs($administrator);
+
+        LegacyRole::withoutEvents(fn () => LegacyRole::create([
+            'nombre_rol' => 'nuevo rol',
+            'descripcion' => 'Rol creado recientemente',
         ]));
 
-        $this->assertTrue($administratorRole->fresh()->hasPermissionTo($customPermission));
-        $this->assertFalse($administratorRole->fresh()->hasPermissionTo($manageSecurity));
-        $this->get(route('seguridad.permisos.index'))->assertOk();
+        $this->get(route('seguridad.permisos.index'))
+            ->assertOk()
+            ->assertSee('nuevo rol');
+
+        $this->assertDatabaseHas('permission_roles', [
+            'name' => 'nuevo rol',
+            'guard_name' => 'web',
+        ]);
     }
 
     public function test_administrator_can_view_and_remove_a_permission_assignment_for_one_role(): void
@@ -174,6 +247,9 @@ class SeguridadPermisosTest extends TestCase
             'apellido' => 'Prueba',
             'correo' => 'admin@example.test',
             'contrasena' => 'password',
+            'pregunta_seguridad' => 'test',
+            'respuesta_seguridad' => 'respuesta',
+            'activo' => true,
         ]));
         $administrator->assignRole($administratorRole);
         $this->actingAs($administrator);
@@ -186,14 +262,14 @@ class SeguridadPermisosTest extends TestCase
             ->assertOk()
             ->assertSee('ID del rol')
             ->assertSee((string) $memberRole->id)
-            ->assertSee('ver productos')
+            ->assertSee('Leer datos de Productos')
             ->assertSee('Quitar permiso del rol');
 
         $this->get(route('seguridad.permisos.assignment.show', [$memberRole->id, $permission->id]))
             ->assertOk()
             ->assertSee((string) $memberRole->id)
             ->assertSee('socios')
-            ->assertSee('ver productos');
+            ->assertSee('Leer datos de Productos');
 
         $this->delete(route('seguridad.permisos.assignment.destroy', [$memberRole->id, $permission->id]))
             ->assertRedirect(route('seguridad.permisos.assignments'));
@@ -227,6 +303,9 @@ class SeguridadPermisosTest extends TestCase
             'apellido' => 'Prueba',
             'correo' => 'admin@example.test',
             'contrasena' => 'password',
+            'pregunta_seguridad' => 'test',
+            'respuesta_seguridad' => 'respuesta',
+            'activo' => true,
         ]));
         $administrator->assignRole($administratorRole);
         $member = Usuario::withoutEvents(fn () => Usuario::create([
@@ -243,7 +322,7 @@ class SeguridadPermisosTest extends TestCase
             ->get(route('seguridad.permisos.roles.show', $memberRole))
             ->assertOk()
             ->assertSee('Acceso de consulta para socios')
-            ->assertSee('ver productos')
+            ->assertSee('Leer datos de Productos')
             ->assertSee('Maria Socios')
             ->assertSee('socia@example.test');
     }
@@ -263,6 +342,9 @@ class SeguridadPermisosTest extends TestCase
             'apellido' => 'Prueba',
             'correo' => 'admin@example.test',
             'contrasena' => 'password',
+            'pregunta_seguridad' => 'test',
+            'respuesta_seguridad' => 'respuesta',
+            'activo' => true,
         ]));
         $administrator->assignRole($administratorRole);
         $this->actingAs($administrator);
@@ -279,6 +361,161 @@ class SeguridadPermisosTest extends TestCase
         $this->assertDatabaseMissing('roles', ['id_rol' => $legacyRole->id_rol]);
     }
 
+    public function test_non_administrator_cannot_access_permission_management_even_with_legacy_permission(): void
+    {
+        $memberRole = Role::create(['name' => 'socios', 'guard_name' => 'web']);
+        $manageSecurity = Permission::create(['name' => 'gestionar seguridad', 'guard_name' => 'web']);
+        $permission = Permission::create(['name' => 'ver productos', 'guard_name' => 'web']);
+        $memberRole->givePermissionTo($manageSecurity);
+        $memberRole->givePermissionTo($permission);
+
+        $member = Usuario::withoutEvents(fn () => Usuario::create([
+            'nombre' => 'Usuario',
+            'apellido' => 'Prueba',
+            'correo' => 'usuario@example.test',
+            'contrasena' => 'password',
+            'pregunta_seguridad' => 'test',
+            'respuesta_seguridad' => 'respuesta',
+            'activo' => true,
+        ]));
+        $member->assignRole($memberRole);
+        $this->actingAs($member);
+
+        $this->get(route('seguridad.permisos.index'))->assertForbidden();
+        $this->get(route('seguridad.permisos.assignments'))->assertForbidden();
+        $this->get(route('seguridad.permisos.roles'))->assertForbidden();
+        $this->put(route('seguridad.permisos.update', $memberRole), [
+            'permissions' => [$permission->id],
+        ])->assertForbidden();
+        $this->get(route('seguridad.permisos.roles.show', $memberRole))->assertForbidden();
+        $this->delete(route('seguridad.permisos.roles.destroy', $memberRole))->assertForbidden();
+        $this->get(route('seguridad.permisos.assignment.show', [$memberRole->id, $permission->id]))
+            ->assertForbidden();
+        $this->delete(route('seguridad.permisos.assignment.destroy', [$memberRole->id, $permission->id]))
+            ->assertForbidden();
+    }
+
+    public function test_module_navigation_and_search_require_access_and_read_permissions(): void
+    {
+        $role = Role::create(['name' => 'socios', 'guard_name' => 'web']);
+        $role->givePermissionTo([
+            Permission::create(['name' => 'acceder productos', 'guard_name' => 'web']),
+            Permission::create(['name' => 'acceder facturas', 'guard_name' => 'web']),
+        ]);
+
+        $user = Usuario::withoutEvents(fn () => Usuario::create([
+            'nombre' => 'Usuario',
+            'apellido' => 'Prueba',
+            'correo' => 'usuario@example.test',
+            'contrasena' => 'password',
+            'pregunta_seguridad' => 'test',
+            'respuesta_seguridad' => 'respuesta',
+            'activo' => true,
+        ]));
+        $user->assignRole($role);
+
+        $this->actingAs($user)
+            ->get(route('search.index', ['q' => 'productos']))
+            ->assertOk()
+            ->assertDontSee(route('productos.index'))
+            ->assertDontSee('Abrir el módulo de productos');
+
+        $this->get(route('detallefacturas.index'))->assertForbidden();
+        $this->get(route('search.index', ['q' => 'detalle factura']))
+            ->assertOk()
+            ->assertDontSee(route('detallefacturas.index'));
+
+        $role->givePermissionTo([
+            Permission::create(['name' => 'acceder detallefacturas', 'guard_name' => 'web']),
+            Permission::create(['name' => 'ver detallefacturas', 'guard_name' => 'web']),
+        ]);
+
+        $this->get(route('search.index', ['q' => 'detalle factura']))
+            ->assertOk()
+            ->assertSee(route('detallefacturas.index'));
+        $this->assertContains(
+            'permiso:detallefacturas',
+            Route::getRoutes()->getByName('detallefacturas.index')->getAction('middleware')
+        );
+    }
+
+    public function test_permission_matrix_hides_actions_not_defined_for_a_module(): void
+    {
+        $administratorRole = Role::create(['name' => 'administrador', 'guard_name' => 'web']);
+        $role = Role::create(['name' => 'socios', 'guard_name' => 'web']);
+        $role->givePermissionTo(Permission::create([
+            'name' => 'editar settings',
+            'guard_name' => 'web',
+        ]));
+
+        $administrator = Usuario::withoutEvents(fn () => Usuario::create([
+            'nombre' => 'Admin',
+            'apellido' => 'Prueba',
+            'correo' => 'admin@example.test',
+            'contrasena' => 'password',
+            'pregunta_seguridad' => 'test',
+            'respuesta_seguridad' => 'respuesta',
+            'activo' => true,
+        ]));
+        $administrator->assignRole($administratorRole);
+
+        $response = $this->actingAs($administrator)
+            ->get(route('seguridad.permisos.roles', [
+                'role_id' => $role->id,
+                'gestionar' => 1,
+            ]))
+            ->assertOk()
+            ->assertSee('Configuración');
+
+        preg_match('/<form id="role-permissions-form".*?<\/form>/s', $response->getContent(), $matrix);
+        $matrixText = strip_tags($matrix[0] ?? '');
+        $this->assertStringContainsString('Modificar', $matrixText);
+        $this->assertStringNotContainsString('Crear', $matrixText);
+    }
+
+    public function test_audit_delete_permission_can_be_selected_for_a_role(): void
+    {
+        $administratorRole = Role::create(['name' => 'administrador', 'guard_name' => 'web']);
+        $role = Role::create(['name' => 'socios', 'guard_name' => 'web']);
+        $deleteAudits = Permission::create([
+            'name' => 'eliminar auditorias',
+            'guard_name' => 'web',
+        ]);
+
+        $administrator = Usuario::withoutEvents(fn () => Usuario::create([
+            'nombre' => 'Admin',
+            'apellido' => 'Prueba',
+            'correo' => 'admin@example.test',
+            'contrasena' => 'password',
+            'pregunta_seguridad' => 'test',
+            'respuesta_seguridad' => 'respuesta',
+            'activo' => true,
+        ]));
+        $administrator->assignRole($administratorRole);
+
+        $response = $this->actingAs($administrator)
+            ->get(route('seguridad.permisos.roles', [
+                'role_id' => $role->id,
+                'gestionar' => 1,
+            ]))
+            ->assertOk()
+            ->assertSee('Auditorías');
+        preg_match('/<form id="role-permissions-form".*?<\/form>/s', $response->getContent(), $matrix);
+        $this->assertStringContainsString('Eliminar', strip_tags($matrix[0] ?? ''));
+        $response->assertSee('value="'.$deleteAudits->id.'"', false);
+        $response->assertDontSee('Seleccionar todos los permisos');
+        $response->assertDontSee('Seleccionar todos de Auditorías');
+
+        $this->put(route('seguridad.permisos.update', $role), [
+            'permissions' => [$deleteAudits->id],
+        ])->assertRedirect(route('seguridad.permisos.roles', [
+            'role_id' => $role->id,
+            'gestionar' => 1,
+        ]));
+
+        $this->assertTrue($role->fresh()->hasPermissionTo($deleteAudits));
+    }
+
     public function test_role_with_users_cannot_be_deleted(): void
     {
         $administratorRole = Role::create(['name' => 'administrador', 'guard_name' => 'web']);
@@ -290,6 +527,9 @@ class SeguridadPermisosTest extends TestCase
             'apellido' => 'Prueba',
             'correo' => 'admin@example.test',
             'contrasena' => 'password',
+            'pregunta_seguridad' => 'test',
+            'respuesta_seguridad' => 'respuesta',
+            'activo' => true,
         ]));
         $administrator->assignRole($administratorRole);
         $member = Usuario::withoutEvents(fn () => Usuario::create([
@@ -297,6 +537,7 @@ class SeguridadPermisosTest extends TestCase
             'apellido' => 'Socios',
             'correo' => 'socia@example.test',
             'contrasena' => 'password',
+            'activo' => true,
         ]));
         $member->assignRole($memberRole);
 
@@ -305,5 +546,74 @@ class SeguridadPermisosTest extends TestCase
             ->assertRedirect(route('seguridad.permisos.index'))
             ->assertSessionHas('error');
         $this->assertDatabaseHas('permission_roles', ['id' => $memberRole->id]);
+    }
+
+    public function test_users_without_permissions_cannot_open_settings_notifications_or_generate_reports(): void
+    {
+        $role = Role::create(['name' => 'socios', 'guard_name' => 'web']);
+        $user = Usuario::withoutEvents(fn () => Usuario::create([
+            'nombre' => 'Maria',
+            'apellido' => 'Socios',
+            'correo' => 'socia@example.test',
+            'contrasena' => 'password',
+            'pregunta_seguridad' => 'test',
+            'respuesta_seguridad' => 'respuesta',
+            'activo' => true,
+        ]));
+        $user->assignRole($role);
+        $role->givePermissionTo(Permission::create([
+            'name' => 'acceder settings',
+            'guard_name' => 'web',
+        ]));
+
+        $this->actingAs($user)
+            ->get(route('settings.index'))
+            ->assertForbidden();
+
+        $this->get(route('notificaciones.index'))
+            ->assertForbidden();
+
+        $this->post(route('reports.generate'))
+            ->assertForbidden();
+
+        $this->get(route('settings.index'))->assertForbidden();
+
+        $role->givePermissionTo(Permission::create([
+            'name' => 'ver settings',
+            'guard_name' => 'web',
+        ]));
+        $this->get(route('settings.index'))
+            ->assertOk()
+            ->assertSee('Mi cuenta')
+            ->assertSee(route('account.show'))
+            ->assertDontSee('Cambiar contraseña');
+        $this->get(route('account.show'))
+            ->assertOk()
+            ->assertSee('Cambiar contraseña')
+            ->assertSee(route('password.change'));
+
+        $role->givePermissionTo(Permission::create([
+            'name' => 'editar settings',
+            'guard_name' => 'web',
+        ]));
+        $this->put(route('settings.update'), [
+            'nombre_empresa' => 'Empresa',
+            'idioma' => 'es',
+            'tamano_letra' => 16,
+        ])
+            ->assertRedirect(route('settings.index'))
+            ->assertSessionHas('error');
+
+        $role->givePermissionTo([
+            Permission::create(['name' => 'acceder usuarios', 'guard_name' => 'web']),
+            Permission::create(['name' => 'editar usuarios', 'guard_name' => 'web']),
+        ]);
+        $this->get(route('usuarios.edit', $user))->assertForbidden();
+
+        $role->givePermissionTo(Permission::create([
+            'name' => 'ver usuarios',
+            'guard_name' => 'web',
+        ]));
+        $this->get(route('usuarios.edit', $user))->assertOk();
     }
 }

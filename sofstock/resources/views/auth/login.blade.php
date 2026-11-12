@@ -27,11 +27,11 @@
     <main class="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
 
         <div class="text-center mb-8">
-            <div class="mx-auto mb-4 w-16 h-16 sena-verde rounded-2xl
-                        flex items-center justify-center text-white
-                        text-2xl font-bold">
-                S
-            </div>
+            <img
+                src="{{ asset('images/sofstock-logo.png') }}"
+                alt="SofStock: gestiona, controla y crece"
+                class="mx-auto mb-4 h-40 w-40 rounded-full object-cover shadow-md"
+            >
 
             <h1 class="text-3xl font-bold text-gray-800">
                 SofStock
@@ -41,9 +41,6 @@
                 Sistema de gestión de inventario
             </p>
 
-            <p class="mt-1 text-sm text-gray-400">
-                Inicia sesión para continuar
-            </p>
         </div>
 
         @if ($errors->any())
@@ -54,6 +51,9 @@
         @endif
         @if (session('success'))
             <div class="mb-5 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">{{ session('success') }}</div>
+        @endif
+        @if (session('warning'))
+            <div class="mb-5 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">{{ session('warning') }}</div>
         @endif
 
         <form method="POST" action="{{ route('login.authenticate') }}">
@@ -99,6 +99,22 @@
                 >
             </div>
 
+            <div class="mb-6">
+                <label for="recordarme" class="flex items-start gap-2 text-sm text-gray-700">
+                    <input
+                        type="checkbox"
+                        id="recordarme"
+                        name="recordarme"
+                        value="1"
+                        @checked(old('recordarme'))
+                        class="mt-0.5 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                    >
+                    <span>
+                        <span class="font-medium">Recordar</span>
+                    </span>
+                </label>
+            </div>
+
             <button
                 type="submit"
                 class="w-full sena-verde text-white font-semibold
@@ -110,6 +126,8 @@
         <a href="{{ route('password.forgot') }}" class="mt-5 block text-center text-sm font-medium text-green-700 hover:text-green-800">¿Olvidaste tu contraseña?</a>
         @if ($setupDisponible)
             <a href="{{ route('initial-admin.create') }}" class="mt-3 block text-center text-sm font-medium text-green-700 hover:text-green-800">Crear la primera cuenta de administrador</a>
+        @else
+            <a href="{{ route('register') }}" class="mt-3 block text-center text-sm font-medium text-green-700 hover:text-green-800">Crear cuenta</a>
         @endif
 
         <div class="mt-8 text-center text-xs text-gray-400">

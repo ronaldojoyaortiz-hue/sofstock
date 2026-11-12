@@ -12,7 +12,13 @@ class ExigirPreguntaSeguridad
     {
         $usuario = $request->user();
         if ($usuario && (!$usuario->pregunta_seguridad || !$usuario->respuesta_seguridad)
-            && !$request->routeIs('security-question.setup', 'security-question.save', 'logout')) {
+            && !$request->routeIs(
+                'security-question.setup',
+                'security-question.save',
+                'logout',
+                'account.show',
+                'account.deactivate'
+            )) {
             return redirect()->route('security-question.setup');
         }
 

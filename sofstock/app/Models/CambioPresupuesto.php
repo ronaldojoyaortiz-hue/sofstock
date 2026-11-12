@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CambioPresupuesto extends Model
 {
@@ -20,4 +21,9 @@ class CambioPresupuesto extends Model
         'presupuesto_anterior' => 'decimal:2',
         'presupuesto_nuevo' => 'decimal:2',
     ];
+
+    public function usuario(): BelongsTo
+    {
+        return $this->belongsTo(Usuario::class, 'id_usuario', 'id');
+    }
 }
