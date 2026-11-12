@@ -21,18 +21,26 @@ class AuditoriaService
         ?array $datosAnteriores = null,
         ?array $datosNuevos = null,
         ?string $motivo = null,
-        ?int $idUsuario = null
+        ?int $idUsuario = null,
+        bool $eliminarTodo = false
     ): Auditoria {
         $request = request();
 
         $usuario = Auth::user();
+        $accionNormalizada = $this->normalizarAccion($accion);
+        $descripcionNormalizada = $this->normalizarDescripcion(
+            $accionNormalizada,
+            $modulo,
+            $descripcion,
+            $eliminarTodo
+        );
 
         return Auditoria::create([
             'id_usuario' => $idUsuario ?? $usuario?->getAuthIdentifier(),
 
-            'accion' => $accion,
+            'accion' => $accionNormalizada,
             'modulo' => $modulo,
-            'descripcion' => $descripcion,
+            'descripcion' => $descripcionNormalizada,
 
             'tabla_afectada' => $tabla,
             'id_registro_afectado' => $idRegistro === null
@@ -57,6 +65,42 @@ class AuditoriaService
                 ? $request->userAgent()
                 : null,
         ]);
+    }
+
+    private function normalizarAccion(string $accion): string
+    {
+        $accionNormalizada = strtoupper(trim($accion));
+
+        if (
+            str_contains($accionNormalizada, 'ELIMINAR')
+            && str_contains($accionNormalizada, 'TODO')
+        ) {
+            return 'ELIMINAR_TODO';
+        }
+
+        return $accionNormalizada;
+    }
+
+    private function normalizarDescripcion(
+        string $accion,
+        string $modulo,
+        string $descripcion,
+        bool $eliminarTodo = false
+    ): string {
+        $descripcionOriginal = trim($descripcion);
+
+        if (
+            $descripcionOriginal !== ''
+            && str_contains(mb_strtolower($descripcionOriginal), 'eliminar todo')
+        ) {
+            return $descripcionOriginal;
+        }
+
+        if ($eliminarTodo || $accion === 'ELIMINAR_TODO') {
+            return 'Se ejecutó la acción "eliminar todo" en el módulo ' . $modulo . '.';
+        }
+
+        return $descripcionOriginal;
     }
 
     /**

@@ -33,7 +33,7 @@
         <x-card><p class="text-sm font-medium text-slate-500">Ingresos por ventas pagadas</p><p class="mt-2 text-2xl font-bold text-emerald-700">{{ $simboloMoneda }}{{ number_format((float) ($resumen['ingresos'] ?? 0), 2, ',', '.') }}</p></x-card>
         <x-card><p class="text-sm font-medium text-slate-500">Inversiones en productos</p><p class="mt-2 text-2xl font-bold text-slate-800">{{ $simboloMoneda }}{{ number_format((float) ($resumen['inversiones'] ?? 0), 2, ',', '.') }}</p></x-card>
         <x-card><p class="text-sm font-medium text-slate-500">Otros gastos</p><p class="mt-2 text-2xl font-bold text-slate-800">{{ $simboloMoneda }}{{ number_format((float) ($resumen['otros_gastos'] ?? 0), 2, ',', '.') }}</p></x-card>
-        <x-card><p class="text-sm font-medium text-slate-500">Pérdida por productos dañados</p><p class="mt-2 text-2xl font-bold text-red-700">{{ $simboloMoneda }}{{ number_format((float) ($resumen['perdida_productos'] ?? 0), 2, ',', '.') }}</p></x-card>
+        <x-card><p class="text-sm font-medium text-slate-500">Pérdida por mermas de productos</p><p class="mt-2 text-2xl font-bold text-red-700">{{ $simboloMoneda }}{{ number_format((float) ($resumen['perdida_productos'] ?? 0), 2, ',', '.') }}</p></x-card>
         <x-card><p class="text-sm font-medium text-slate-500">Ganancia o pérdida del período</p><p class="mt-2 text-2xl font-bold {{ ($resumen['resultado'] ?? 0) < 0 ? 'text-red-700' : 'text-emerald-700' }}">{{ $simboloMoneda }}{{ number_format((float) ($resumen['resultado'] ?? 0), 2, ',', '.') }}</p></x-card>
         @if (($resumen['presupuesto_final'] ?? null) !== null)
             <x-card><p class="text-sm font-medium text-slate-500">Presupuesto final</p><p class="mt-2 text-2xl font-bold text-slate-800">{{ $simboloMoneda }}{{ number_format((float) $resumen['presupuesto_final'], 2, ',', '.') }}</p></x-card>
@@ -70,7 +70,7 @@
         </div>
     </x-card>
 
-    <x-card title="Productos dañados o vencidos" :padding="false">
+    <x-card title="Mermas de productos" :padding="false">
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-slate-100 text-sm">
                 <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500"><tr><th class="px-5 py-3">Fecha</th><th class="px-5 py-3">Producto</th><th class="px-5 py-3">Cantidad</th><th class="px-5 py-3">Motivo</th><th class="px-5 py-3 text-right">Pérdida</th></tr></thead>
@@ -81,6 +81,9 @@
                         <tr><td colspan="5" class="px-5 py-8 text-center text-slate-500">No hay productos dañados registrados en este período.</td></tr>
                     @endforelse
                 </tbody>
+                <tfoot class="border-t-2 border-slate-200 bg-slate-50 font-semibold text-slate-800">
+                    <tr><td colspan="4" class="px-5 py-3 text-right">Total de pérdidas por mermas</td><td class="px-5 py-3 text-right text-red-700">{{ $simboloMoneda }}{{ number_format((float) ($resumen['perdida_productos'] ?? 0), 2, ',', '.') }}</td></tr>
+                </tfoot>
             </table>
         </div>
     </x-card>

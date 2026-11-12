@@ -70,7 +70,17 @@
 </head>
 <body class="h-full text-slate-800 antialiased">
 
-    <div x-data="{ sidebarOpen: false }" class="min-h-screen flex">
+    <div
+        x-data="{
+            sidebarOpen: false,
+            sidebarVisible: localStorage.getItem('sofstock-sidebar-visible') !== 'false',
+            toggleSidebar() {
+                this.sidebarVisible = !this.sidebarVisible;
+                localStorage.setItem('sofstock-sidebar-visible', this.sidebarVisible ? 'true' : 'false');
+            }
+        }"
+        class="min-h-screen flex"
+    >
 
         {{-- Overlay móvil --}}
         <div
@@ -83,7 +93,7 @@
 
         @include('layouts.partials.sidebar')
 
-        <div class="flex-1 flex flex-col min-w-0 lg:pl-64">
+        <div class="flex-1 flex flex-col min-w-0 transition-[padding] duration-200" :class="sidebarVisible ? 'lg:pl-64' : 'lg:pl-0'">
             @include('layouts.partials.navbar')
 
             <main class="flex-1 p-4 sm:p-6 lg:p-8">

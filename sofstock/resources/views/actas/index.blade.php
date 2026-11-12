@@ -36,11 +36,8 @@
             <thead class="bg-gray-50">
                 <tr>
                     <th class="px-4 py-3 text-left text-sm font-semibold">Código</th>
-                    <th class="px-4 py-3 text-left text-sm font-semibold">Título</th>
-                    <th class="px-4 py-3 text-left text-sm font-semibold">Tipo</th>
+                    <th class="px-4 py-3 text-left text-sm font-semibold">Tipo de acta</th>
                     <th class="px-4 py-3 text-left text-sm font-semibold">Fecha</th>
-                    <th class="px-4 py-3 text-left text-sm font-semibold">Responsable</th>
-                    <th class="px-4 py-3 text-left text-sm font-semibold">Relacionado</th>
                     <th class="px-4 py-3 text-left text-sm font-semibold">Estado</th>
                     <th class="px-4 py-3 text-center text-sm font-semibold">Acciones</th>
                 </tr>
@@ -50,27 +47,18 @@
                 @forelse($actas as $acta)
                     <tr>
                         <td class="px-4 py-3 text-sm">{{ $acta->codigo }}</td>
-                        <td class="px-4 py-3 text-sm">{{ $acta->titulo }}</td>
                         <td class="px-4 py-3 text-sm">
                             {{ [
-                                'entrega_bienes' => 'Entrega de bienes',
+                                'entrega' => 'Acta de entrega',
+                                'recibo' => 'Acta de recibo',
                                 'junta_directiva' => 'Junta directiva',
-                                'asamblea' => 'Reunión o asamblea',
-                                'entrega_inmueble' => 'Entrega de inmueble'
-                            ][$acta->tipo] ?? $acta->tipo }}
+                                'asamblea' => 'Asamblea',
+                                'inventario' => 'Acta de inventario',
+                                'devolucion' => 'Acta de devolución',
+                            ][$acta->tipo_acta] ?? $acta->tipo_acta }}
                         </td>
                         <td class="px-4 py-3 text-sm">
                             {{ $acta->fecha?->format('d/m/Y') }}
-                        </td>
-                        <td class="px-4 py-3 text-sm">{{ $acta->usuario_nombre }}</td>
-                        <td class="px-4 py-3 text-sm">
-                            @if($acta->inmueble)
-                                {{ $acta->inmueble->codigo }}
-                            @elseif($acta->productos->isNotEmpty())
-                                {{ $acta->productos->pluck('nombre')->join(', ') }}
-                            @else
-                                —
-                            @endif
                         </td>
                         <td class="px-4 py-3 text-sm">
                             {{ ucfirst(str_replace('_', ' ', $acta->estado)) }}
@@ -80,12 +68,6 @@
                                 <a href="{{ route('actas.show', $acta->id) }}" class="text-sky-700 transition hover:text-sky-900" title="Ver acta" aria-label="Ver acta">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></svg>
                                 </a>
-
-                                @can('editar actas')
-                                    <a href="{{ route('actas.edit', $acta->id) }}" class="text-blue-600 transition hover:text-blue-800" title="Editar acta" aria-label="Editar acta">
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5" aria-hidden="true"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z" /><path d="M15 5l4 4" /></svg>
-                                    </a>
-                                @endcan
 
                                 @can('eliminar actas')
                                     <form action="{{ route('actas.destroy', $acta->id) }}"
@@ -103,7 +85,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="8" class="px-4 py-8 text-center text-gray-500">
+                        <td colspan="5" class="px-4 py-8 text-center text-gray-500">
                             No hay actas registradas.
                         </td>
                     </tr>

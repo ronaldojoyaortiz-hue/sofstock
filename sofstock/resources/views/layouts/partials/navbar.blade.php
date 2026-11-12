@@ -7,7 +7,20 @@
                 @click="sidebarOpen = !sidebarOpen"
                 type="button"
                 class="lg:hidden p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                aria-label="Abrir menú lateral"
+                :aria-label="sidebarOpen ? 'Cerrar menú lateral' : 'Abrir menú lateral'"
+                :aria-expanded="sidebarOpen.toString()"
+                title="Mostrar u ocultar menú"
+            >
+                <span class="w-6 h-6 block">@include('layouts.partials.icons', ['icon' => 'menu'])</span>
+            </button>
+
+            <button
+                @click="toggleSidebar()"
+                type="button"
+                class="hidden lg:inline-flex p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                :aria-label="sidebarVisible ? 'Ocultar menú lateral' : 'Mostrar menú lateral'"
+                :aria-expanded="sidebarVisible.toString()"
+                title="Mostrar u ocultar menú"
             >
                 <span class="w-6 h-6 block">@include('layouts.partials.icons', ['icon' => 'menu'])</span>
             </button>

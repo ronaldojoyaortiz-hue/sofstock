@@ -5,8 +5,8 @@
 --}}
 <aside
     x-cloak
-    :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
-    class="fixed inset-y-0 left-0 z-40 w-64 bg-slate-900 text-slate-300 transform transition-transform duration-200 ease-in-out lg:translate-x-0"
+    :class="sidebarOpen ? 'translate-x-0' : (sidebarVisible ? '-translate-x-full lg:translate-x-0' : '-translate-x-full')"
+    class="fixed inset-y-0 left-0 z-40 w-64 bg-slate-900 text-slate-300 transform transition-transform duration-200 ease-in-out"
     aria-label="Menú principal"
 >
     <div class="h-full flex flex-col">
@@ -74,6 +74,30 @@
                     <span>{{ $link['label'] }}</span>
                 </a>
             @endforeach
+
+            @php
+                $modulosConsulta = ['productos', 'categorias', 'facturas', 'reportes', 'proveedores', 'usuarios', 'inmuebles', 'contratos', 'auditorias', 'actas'];
+                $puedeConsultar = $esAdministrador || collect($modulosConsulta)->contains(
+                    fn (string $modulo) => $usuarioActual?->can('acceder ' . $modulo)
+                        && $usuarioActual?->can('ver ' . $modulo)
+                );
+                $consultasActivo = request()->routeIs('consultas.*');
+            @endphp
+            @if ($puedeConsultar && Route::has('consultas.index'))
+                <a
+                    href="{{ route('consultas.index') }}"
+                    @if($consultasActivo) aria-current="page" @endif
+                    class="group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
+                        {{ $consultasActivo
+                            ? 'bg-primary-600 text-white shadow-sm'
+                            : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
+                >
+                    <span class="w-5 h-5 flex-shrink-0" aria-hidden="true">
+                        @include('layouts.partials.icons', ['icon' => 'search'])
+                    </span>
+                    <span>Consultas</span>
+                </a>
+            @endif
         </nav>
 
         {{-- Cerrar sesión --}}

@@ -79,14 +79,26 @@ class AuditoriaObserver
             return;
         }
 
+        $descripcion = 'Se eliminó un registro del módulo '
+            . class_basename($model) . '.';
+
+        if (
+            method_exists($model, 'getAuditDeleteMode')
+            && (bool) $model->getAuditDeleteMode()
+        ) {
+            $descripcion = 'Se ejecutó la acción "eliminar todo" en el módulo '
+                . class_basename($model) . '.';
+        }
+
         $this->auditoriaService->registrar(
             accion: 'ELIMINAR',
             modulo: class_basename($model),
-            descripcion: 'Se eliminó un registro del módulo '
-                . class_basename($model) . '.',
+            descripcion: $descripcion,
             tabla: $model->getTable(),
             idRegistro: $model->getKey(),
-            datosAnteriores: $this->datosSeguros($model->getAttributes())
+            datosAnteriores: $this->datosSeguros($model->getAttributes()),
+            eliminarTodo: method_exists($model, 'getAuditDeleteMode')
+                && (bool) $model->getAuditDeleteMode()
         );
     }
 

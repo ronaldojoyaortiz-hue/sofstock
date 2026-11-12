@@ -10,15 +10,20 @@
         || mb_strtolower(trim($usuario->rol?->nombre_rol ?? '')) === 'administrador';
 @endphp
 
-<div x-data="{ generarAbierto: @js(old('periodo') !== null), periodo: @js(old('periodo', 'mensual')) }">
+<div x-data="{ generarAbierto: @js(old('periodo') !== null), mermaAbierta: @js($errors->hasAny(['id_producto', 'cantidad', 'fecha', 'motivo'])), periodo: @js(old('periodo', 'mensual')) }">
     <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
             <h1 class="text-2xl font-bold text-slate-800">Reportes</h1>
             <p class="mt-1 text-sm text-slate-500">Genera reportes por período y consulta los que ya guardaste.</p>
         </div>
-        @if ($esAdministrador || $usuario->can('crear reportes'))
-            <x-button type="button" @click="generarAbierto = true">Generar reporte</x-button>
-        @endif
+        <div class="flex flex-wrap gap-2">
+            @if ($tablasFinancierasListas && $productos->isNotEmpty() && ($esAdministrador || $usuario->can('crear reportes')))
+                <x-button type="button" @click="mermaAbierta = true">Registrar producto dañado</x-button>
+            @endif
+            @if ($esAdministrador || $usuario->can('crear reportes'))
+                <x-button type="button" @click="generarAbierto = true">Generar reporte</x-button>
+            @endif
+        </div>
     </div>
 
     @unless ($tablasFinancierasListas)
@@ -27,18 +32,23 @@
         </div>
     @endunless
 
-    @if ($tablasFinancierasListas && ($esAdministrador || $usuario->can('crear reportes')))
-        <x-card title="Registrar producto dañado o vencido" subtitle="Al guardar, se descuenta la cantidad del inventario y queda registrada la fecha y la pérdida." class="mb-6">
-            @if ($productos->isEmpty())
-                <p class="text-sm text-slate-500">No hay productos activos para registrar.</p>
-            @else
-                <form method="POST" action="{{ route('reports.spoilage.store') }}" class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+    @if ($tablasFinancierasListas && ($esAdministrador || $usuario->can('crear reportes')) && $productos->isNotEmpty())
+        <div x-show="mermaAbierta" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4" @keydown.escape.window="mermaAbierta = false">
+            <div class="w-full max-w-3xl rounded-xl bg-white p-6 shadow-xl" @click.outside="mermaAbierta = false">
+                <div class="mb-5 flex items-start justify-between">
+                    <div>
+                        <h2 class="text-lg font-semibold text-slate-800">Registrar producto dañado</h2>
+                        <p class="mt-1 text-sm text-slate-500">La pérdida se calcula usando la cantidad y el precio base del producto.</p>
+                    </div>
+                    <button type="button" @click="mermaAbierta = false" class="text-slate-400 hover:text-slate-700" aria-label="Cerrar">&times;</button>
+                </div>
+                <form method="POST" action="{{ route('reports.spoilage.store') }}" class="grid grid-cols-1 gap-4 md:grid-cols-2">
                     @csrf
                     <div>
                         <label for="id_producto" class="mb-1 block text-sm font-medium text-slate-700">Producto</label>
                         <select id="id_producto" name="id_producto" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200">
                             @foreach ($productos as $producto)
-                                <option value="{{ $producto->id }}" @selected(old('id_producto') == $producto->id)>{{ $producto->nombre }} — stock: {{ $producto->stock_actual }}</option>
+                                <option value="{{ $producto->id }}" @selected(old('id_producto') == $producto->id)>{{ $producto->nombre }} — stock: {{ $producto->stock_actual }} · precio base: {{ $simboloMoneda }}{{ number_format((float) $producto->precio_base, 2, ',', '.') }}</option>
                             @endforeach
                         </select>
                         @error('id_producto') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
@@ -47,11 +57,6 @@
                         <label for="cantidad" class="mb-1 block text-sm font-medium text-slate-700">Cantidad dañada</label>
                         <input id="cantidad" name="cantidad" type="number" min="1" step="1" required value="{{ old('cantidad') }}" class="no-spinner w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200">
                         @error('cantidad') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
-                    </div>
-                    <div>
-                        <label for="valor_perdida" class="mb-1 block text-sm font-medium text-slate-700">Valor de la pérdida</label>
-                        <input id="valor_perdida" name="valor_perdida" type="number" min="0.01" step="0.01" required value="{{ old('valor_perdida') }}" class="no-spinner w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200">
-                        @error('valor_perdida') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                     </div>
                     <div>
                         <label for="fecha_merma" class="mb-1 block text-sm font-medium text-slate-700">Fecha</label>
@@ -63,10 +68,13 @@
                         <input id="motivo" name="motivo" type="text" maxlength="180" required value="{{ old('motivo') }}" placeholder="Vencido, dañado, etc." class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200">
                         @error('motivo') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                     </div>
-                    <div class="md:col-span-2 xl:col-span-5"><x-button type="submit">Guardar producto dañado</x-button></div>
+                    <div class="md:col-span-2 flex justify-end gap-2 pt-2">
+                        <x-button type="button" variant="secondary" @click="mermaAbierta = false">Cancelar</x-button>
+                        <x-button type="submit">Guardar producto dañado</x-button>
+                    </div>
                 </form>
-            @endif
-        </x-card>
+            </div>
+        </div>
     @endif
 
     <x-card title="Reportes guardados" subtitle="Abre un reporte para consultar el detalle completo." :padding="false">

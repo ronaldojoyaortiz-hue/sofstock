@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Auditoria;
 use App\Models\Usuario;
+use App\Services\AuditoriaService;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Spatie\Permission\Models\Permission;
@@ -176,6 +177,112 @@ class AuditoriaOcultarTest extends TestCase
         ]);
     }
 
+    public function test_user_can_select_and_hide_multiple_audits_from_their_history(): void
+    {
+        $role = Role::create(['name' => 'auditores', 'guard_name' => 'web']);
+        $role->givePermissionTo([
+            Permission::create(['name' => 'acceder auditorias', 'guard_name' => 'web']),
+            Permission::create(['name' => 'ver auditorias', 'guard_name' => 'web']),
+            Permission::create(['name' => 'eliminar auditorias', 'guard_name' => 'web']),
+        ]);
+        $user = $this->crearUsuario('seleccion@example.test', $role);
+        $otroUsuario = $this->crearUsuario('testigo@example.test', $role);
+        $auditorias = collect(['Primera auditoría.', 'Segunda auditoría.'])
+            ->map(fn (string $descripcion): Auditoria => Auditoria::query()->create([
+                'accion' => 'CREAR',
+                'modulo' => 'Productos',
+                'descripcion' => $descripcion,
+                'created_at' => now(),
+            ]));
+
+        $this->actingAs($user)
+            ->get(route('auditorias.index'))
+            ->assertOk()
+            ->assertSee('Seleccionar todas las auditorías (todas las páginas)')
+            ->assertSee('Eliminar')
+            ->assertSee('¿Deseas eliminar las auditorías seleccionadas de tu historial?', false);
+
+        $this->actingAs($user)
+            ->delete(route('auditorias.destroy-selected'), [
+                'auditorias' => $auditorias->pluck('id_auditoria')->all(),
+            ])
+            ->assertRedirect(route('auditorias.index'))
+            ->assertSessionHas('success');
+
+        foreach ($auditorias as $auditoria) {
+            $this->assertDatabaseHas('auditoria_usuario_oculta', [
+                'id_auditoria' => $auditoria->id_auditoria,
+                'id_usuario' => $user->id,
+            ]);
+            $this->assertDatabaseHas('auditorias', [
+                'id_auditoria' => $auditoria->id_auditoria,
+            ]);
+        }
+
+        $this->actingAs($otroUsuario)
+            ->get(route('auditorias.index'))
+            ->assertSee('Primera auditoría.')
+            ->assertSee('Segunda auditoría.');
+    }
+
+    public function test_select_all_hides_audits_across_all_pages(): void
+    {
+        $role = Role::create(['name' => 'auditores', 'guard_name' => 'web']);
+        $role->givePermissionTo([
+            Permission::create(['name' => 'acceder auditorias', 'guard_name' => 'web']),
+            Permission::create(['name' => 'ver auditorias', 'guard_name' => 'web']),
+            Permission::create(['name' => 'eliminar auditorias', 'guard_name' => 'web']),
+        ]);
+        $user = $this->crearUsuario('seleccion-todas@example.test', $role);
+        $otroUsuario = $this->crearUsuario('testigo-todas@example.test', $role);
+        $auditorias = collect(range(1, 31))
+            ->map(fn (int $numero): Auditoria => Auditoria::query()->create([
+                'accion' => 'CREAR',
+                'modulo' => 'Productos',
+                'descripcion' => "Auditoría {$numero}.",
+                'created_at' => now(),
+            ]));
+
+        $this->actingAs($user)
+            ->delete(route('auditorias.destroy-selected'), [
+                'seleccionar_todas' => '1',
+            ])
+            ->assertRedirect(route('auditorias.index'))
+            ->assertSessionHas('success', '31 auditoría(s) se ocultaron de tu historial. Los demás usuarios todavía podrán verlas.');
+
+        $this->assertDatabaseCount('auditoria_usuario_oculta', 31);
+        $this->assertDatabaseHas('auditoria_usuario_oculta', [
+            'id_auditoria' => $auditorias->last()->id_auditoria,
+            'id_usuario' => $user->id,
+        ]);
+        $this->assertDatabaseHas('auditorias', [
+            'id_auditoria' => $auditorias->last()->id_auditoria,
+        ]);
+
+        $this->actingAs($otroUsuario)
+            ->get(route('auditorias.show', $auditorias->last()->id_auditoria))
+            ->assertOk()
+            ->assertSee('Auditoría 31.');
+    }
+
+    public function test_bulk_delete_audit_is_recorded_as_eliminar_todo(): void
+    {
+        $auditoria = app(AuditoriaService::class)->registrar(
+            accion: 'ELIMINAR_TODO',
+            modulo: 'Productos',
+            descripcion: 'Se eliminó todo del módulo Productos.',
+            idUsuario: 42,
+            eliminarTodo: true
+        );
+
+        $this->assertSame('ELIMINAR_TODO', $auditoria->accion);
+        $this->assertStringContainsString('eliminar todo', strtolower($auditoria->descripcion));
+        $this->assertDatabaseHas('auditorias', [
+            'id_auditoria' => $auditoria->id_auditoria,
+            'accion' => 'ELIMINAR_TODO',
+        ]);
+    }
+
     private function crearUsuario(string $correo, Role $role): Usuario
     {
         $user = Usuario::withoutEvents(fn () => Usuario::query()->create([
@@ -183,6 +290,7 @@ class AuditoriaOcultarTest extends TestCase
             'apellido' => 'Prueba',
             'correo' => $correo,
             'contrasena' => 'password',
+            'activo' => true,
             'pregunta_seguridad' => 'Pregunta',
             'respuesta_seguridad' => 'Respuesta',
         ]));

@@ -23,7 +23,7 @@ class FacturaController extends Controller
         $registro = $this->facturaService->buscar($factura);
         $registro->load('detalles.producto');
 
-        return view('facturas.show', ['factura' => $registro]);
+        return view('detallefacturas.show', ['factura' => $registro]);
     }
 
 }

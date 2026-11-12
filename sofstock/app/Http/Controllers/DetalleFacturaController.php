@@ -16,14 +16,14 @@ class DetalleFacturaController extends Controller
 
     public function index(): View
     {
-        return view('facturas.detalle-index', [
+        return view('detallefacturas.index', [
             'facturas' => $this->facturaService->listarTodo(),
         ]);
     }
 
     public function create(): View
     {
-        return view('facturas.create', [
+        return view('detallefacturas.create', [
             'productos' => $this->facturaService->productosDisponibles(),
         ]);
     }
@@ -45,7 +45,7 @@ class DetalleFacturaController extends Controller
 
         $detallefactura->load('detalles.producto');
 
-        return view('facturas.edit', [
+        return view('detallefacturas.edit', [
             'factura' => $detallefactura,
             'productos' => $this->facturaService->productosDisponibles(),
         ]);

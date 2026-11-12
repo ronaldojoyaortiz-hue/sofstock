@@ -78,4 +78,27 @@ class AuditoriaController extends Controller
         return redirect()->route('auditorias.index')
             ->with('success', 'La auditoría se ocultó de tu historial. Los demás usuarios todavía podrán verla.');
     }
+
+    public function destroySelected(Request $request): RedirectResponse
+    {
+        $datos = $request->validate([
+            'seleccionar_todas' => ['nullable', 'boolean'],
+            'auditorias' => ['required_unless:seleccionar_todas,1', 'array', 'min:1'],
+            'auditorias.*' => ['required', 'integer', 'distinct', 'exists:auditorias,id_auditoria'],
+        ]);
+
+        $usuarioId = (int) $request->user()->getAuthIdentifier();
+        $cantidad = filter_var(
+            $datos['seleccionar_todas'] ?? false,
+            FILTER_VALIDATE_BOOLEAN
+        )
+            ? $this->auditoriaRepository->ocultarTodasParaUsuario($usuarioId)
+            : $this->auditoriaRepository->ocultarVariasParaUsuario(
+                $datos['auditorias'],
+                $usuarioId
+            );
+
+        return redirect()->route('auditorias.index')
+            ->with('success', "{$cantidad} auditoría(s) se ocultaron de tu historial. Los demás usuarios todavía podrán verlas.");
+    }
 }

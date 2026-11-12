@@ -2,21 +2,25 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Categoria;
 use App\Models\Producto;
 use App\Models\Proveedores;
+use App\Models\Usuario;
 use App\Services\ProductoService;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class ProductoController extends Controller
 {
     public function __construct(private ProductoService $productoService) {}
+
     /**
      * Mostrar el listado de recursos.
      */
     public function index()
     {
         $productos = Producto::with('categoria')->get();
+
         return view('productos.index', compact('productos'));
     }
 
@@ -27,7 +31,11 @@ class ProductoController extends Controller
     {
         $categorias = Categoria::where('activa', true)->get();
         $proveedores = Proveedores::orderBy('razon_social')->get();
-        return view('productos.create', compact('categorias', 'proveedores'));
+        $usuariosAlertaStock = auth()->user()?->esAdministrador()
+            ? Usuario::query()->where('activo', true)->orderBy('nombre')->orderBy('apellido')->get(['id', 'nombre', 'apellido', 'correo'])
+            : collect();
+
+        return view('productos.create', compact('categorias', 'proveedores', 'usuariosAlertaStock'));
     }
 
     /**
@@ -58,7 +66,15 @@ class ProductoController extends Controller
         $producto = $this->productoService->buscar($id);
         $categorias = Categoria::where('activa', true)->get();
         $proveedores = Proveedores::orderBy('razon_social')->get();
-        return view('productos.edit', compact('producto', 'categorias', 'proveedores'));
+        $usuariosAlertaStock = auth()->user()?->esAdministrador()
+            ? Usuario::query()->where('activo', true)->orderBy('nombre')->orderBy('apellido')->get(['id', 'nombre', 'apellido', 'correo'])
+            : collect();
+
+        if (auth()->user()?->esAdministrador()) {
+            $producto->load('usuariosDestinatariosAlertaStock');
+        }
+
+        return view('productos.edit', compact('producto', 'categorias', 'proveedores', 'usuariosAlertaStock'));
     }
 
     /**
@@ -87,15 +103,32 @@ class ProductoController extends Controller
 
     private function validarProducto(Request $request): array
     {
-        return $request->validate([
+        if ($request->exists('usuarios_alerta_stock') && ! $request->user()?->esAdministrador()) {
+            abort(403);
+        }
+
+        $datos = $request->validate([
             'nombre' => ['required', 'string', 'max:150'],
             'descripcion' => ['nullable', 'string'],
             'marca' => ['nullable', 'string', 'max:100'],
             'id_categoria' => ['required', 'integer', 'exists:categorias,id_categoria'],
             'id_proveedor' => ['nullable', 'integer', 'exists:proveedores,id_proveedor'],
             'stock_actual' => ['required', 'integer', 'min:0'],
+            'stock_minimo' => ['sometimes', 'numeric', 'min:0'],
             'precio_base' => ['required', 'numeric', 'min:0'],
-            'activo' => ['required', 'boolean'],
+            'fecha_caducidad' => ['nullable', 'date'],
+            'usuarios_alerta_stock' => ['sometimes', 'array'],
+            'usuarios_alerta_stock.*' => [
+                'integer',
+                'distinct',
+                Rule::exists('usuarios', 'id')->where(fn ($query) => $query->where('activo', true)),
+            ],
         ]);
+
+        if ($request->user()?->esAdministrador()) {
+            $datos['usuarios_alerta_stock'] = $request->input('usuarios_alerta_stock', []);
+        }
+
+        return $datos;
     }
 }

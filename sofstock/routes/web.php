@@ -1,25 +1,29 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\CategoriaController;
-use App\Http\Controllers\ProductoController;
-use App\Http\Controllers\RolController;
-use App\Http\Controllers\FacturaController;
-use App\Http\Controllers\DetalleFacturaController;
-use App\Http\Controllers\ProveedorController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\UsuarioController;
-use App\Http\Controllers\AuditoriaController;
-use App\Http\Controllers\InmobiliarioController;
-use App\Http\Controllers\ContratoController;
-use App\Http\Controllers\SeguridadPermisosController;
-use App\Http\Controllers\ReporteController;
-use App\Http\Controllers\ConfiguracionController;
-use App\Http\Controllers\BusquedaController;
-use App\Http\Controllers\NotificacionController;
 use App\Http\Controllers\ActaController;
+use App\Http\Controllers\AuditoriaController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BusquedaController;
+use App\Http\Controllers\CategoriaController;
+use App\Http\Controllers\ConfiguracionController;
+use App\Http\Controllers\ConsultasController;
+use App\Http\Controllers\ContratoController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DetalleFacturaController;
+use App\Http\Controllers\FacturaController;
 use App\Http\Controllers\InitialAdminController;
+use App\Http\Controllers\InmobiliarioController;
+use App\Http\Controllers\NotificacionController;
+use App\Http\Controllers\ProductoController;
+use App\Http\Controllers\ProveedorController;
+use App\Http\Controllers\ReporteController;
+use App\Http\Controllers\RolController;
+use App\Http\Controllers\SeguridadPermisosController;
+use App\Http\Controllers\SolicitudRegistroController;
+use App\Http\Controllers\UsuarioController;
+use App\Http\Middleware\EnsureAccountActive;
+use App\Http\Middleware\ExigirPreguntaSeguridad;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/configuracion-inicial/administrador', [InitialAdminController::class, 'create'])->name('initial-admin.create');
 Route::post('/configuracion-inicial/administrador', [InitialAdminController::class, 'store'])->name('initial-admin.store');
@@ -34,12 +38,12 @@ Route::post('/recuperar-contrasena/guardar-respuesta', [AuthController::class, '
 Route::redirect('/', '/login')->name('home');
 Route::middleware([
     'auth',
-    \App\Http\Middleware\EnsureAccountActive::class,
-    \App\Http\Middleware\ExigirPreguntaSeguridad::class,
+    EnsureAccountActive::class,
+    ExigirPreguntaSeguridad::class,
 ])->group(function () {
-    Route::get('/solicitudes-registro', [\App\Http\Controllers\SolicitudRegistroController::class, 'index'])->name('registration-requests.index');
-    Route::post('/solicitudes-registro/{usuario}/aprobar', [\App\Http\Controllers\SolicitudRegistroController::class, 'approve'])->whereNumber('usuario')->name('registration-requests.approve');
-    Route::post('/solicitudes-registro/{usuario}/rechazar', [\App\Http\Controllers\SolicitudRegistroController::class, 'reject'])->whereNumber('usuario')->name('registration-requests.reject');
+    Route::get('/solicitudes-registro', [SolicitudRegistroController::class, 'index'])->name('registration-requests.index');
+    Route::post('/solicitudes-registro/{usuario}/aprobar', [SolicitudRegistroController::class, 'approve'])->whereNumber('usuario')->name('registration-requests.approve');
+    Route::post('/solicitudes-registro/{usuario}/rechazar', [SolicitudRegistroController::class, 'reject'])->whereNumber('usuario')->name('registration-requests.reject');
     Route::get('/configurar-pregunta-seguridad', [AuthController::class, 'showSecurityQuestionSetup'])->name('security-question.setup');
     Route::post('/configurar-pregunta-seguridad', [AuthController::class, 'saveSecurityQuestion'])->name('security-question.save');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
@@ -88,14 +92,58 @@ Route::middleware([
     Route::resource('usuarios', UsuarioController::class)->middleware('permiso:usuarios');
     Route::post('/usuarios/{id}/restablecer-contrasena', [UsuarioController::class, 'restablecerContrasena'])->middleware('permiso:usuarios,editar')->name('usuarios.restablecer-contrasena');
     Route::get('auditorias', [AuditoriaController::class, 'index'])->middleware('permiso:auditorias,ver')->name('auditorias.index');
+    Route::delete('auditorias', [AuditoriaController::class, 'destroySelected'])->middleware('permiso:auditorias,eliminar')->name('auditorias.destroy-selected');
     Route::get('auditorias/{id}', [AuditoriaController::class, 'show'])->whereNumber('id')->middleware('permiso:auditorias,ver')->name('auditorias.show');
     Route::delete('auditorias/{id}', [AuditoriaController::class, 'destroy'])->whereNumber('id')->middleware('permiso:auditorias,eliminar')->name('auditorias.destroy');
     Route::get('/contratos', [ContratoController::class, 'all'])->middleware('permiso:contratos,ver')->name('contratos.index');
-    Route::resource('actas', ActaController::class)->middleware('permiso:actas');
+    Route::get('/actas/{acta}/pdf', [ActaController::class, 'pdf'])
+        ->whereNumber('acta')
+        ->middleware('permiso:actas,ver')
+        ->name('actas.pdf');
+    Route::patch('/actas/{acta}/estado', [ActaController::class, 'actualizarEstado'])
+        ->whereNumber('acta')
+        ->middleware('permiso:actas,editar')
+        ->name('actas.estado');
+    Route::resource('actas', ActaController::class)
+        ->except(['edit', 'update'])
+        ->middleware('permiso:actas');
     Route::get('/contratos/crear', [ContratoController::class, 'createGlobal'])->middleware('permiso:contratos,crear')->name('contratos.create');
     Route::post('/contratos/crear', [ContratoController::class, 'selectInmueble'])->middleware('permiso:contratos,crear')->name('contratos.select-inmueble');
     Route::get('/inmuebles/{inmueble}/archivos/{indice}', [InmobiliarioController::class, 'archivo'])->whereNumber(['inmueble', 'indice'])->middleware('permiso:inmuebles,ver')->name('inmuebles.archivos.show');
     Route::get('/inmuebles/{inmueble}/contratos/{contrato}/archivos/{indice}', [ContratoController::class, 'archivo'])->whereNumber(['inmueble', 'contrato', 'indice'])->middleware('permiso:contratos,ver')->name('inmuebles.contratos.archivos.show');
     Route::resource('inmuebles', InmobiliarioController::class)->middleware('permiso:inmuebles');
     Route::resource('inmuebles.contratos', ContratoController::class)->middleware('permiso:contratos');
+
+    Route::get('/consultas', [ConsultasController::class, 'index'])->name('consultas.index');
+
+    $consultasPorModulo = [
+        'productos' => 'productos',
+        'categorias' => 'categorias',
+        'facturas' => 'facturas',
+        'reportes' => 'reportes',
+        'proveedores' => 'proveedores',
+        'usuarios' => 'usuarios',
+        'inmuebles' => 'inmuebles',
+        'contratos' => 'contratos',
+        'auditorias' => 'auditorias',
+        'actas' => 'actas',
+    ];
+
+    foreach ($consultasPorModulo as $tipoConsulta => $permisoModulo) {
+        Route::get("/consultas/{$tipoConsulta}", [ConsultasController::class, 'listar'])
+            ->defaults('tipoConsulta', $tipoConsulta)
+            ->middleware("permiso:{$permisoModulo},ver")
+            ->name("consultas.{$tipoConsulta}.index");
+
+        Route::get("/consultas/{$tipoConsulta}/{id}", [ConsultasController::class, 'detalle'])
+            ->whereNumber('id')
+            ->defaults('tipoConsulta', $tipoConsulta)
+            ->middleware("permiso:{$permisoModulo},ver")
+            ->name("consultas.{$tipoConsulta}.detalle");
+    }
+
+    Route::get('/consultas/reportes/registros/{tipoRegistro}/{id}', [ConsultasController::class, 'detalleReporte'])
+        ->whereNumber('id')
+        ->middleware('permiso:reportes,ver')
+        ->name('consultas.reportes.registro');
 });

@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\View;
+use Illuminate\Support\ViewErrorBag;
 use Tests\TestCase;
 
 class FacturaPantallasTest extends TestCase
@@ -12,6 +14,13 @@ class FacturaPantallasTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->withoutMiddleware([
+            \Illuminate\Auth\Middleware\Authenticate::class,
+            \App\Http\Middleware\EnsureAccountActive::class,
+            \App\Http\Middleware\ExigirPreguntaSeguridad::class,
+            \App\Http\Middleware\Permiso::class,
+        ]);
+        View::share('errors', new ViewErrorBag);
 
         Schema::create('facturas', function (Blueprint $table) {
             $table->id('id_factura');
@@ -57,9 +66,10 @@ class FacturaPantallasTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_detalle_de_factura_muestra_edicion_y_eliminacion(): void
+    public function test_detalle_de_factura_muestra_la_lista_y_su_vista_separada(): void
     {
         \DB::table('facturas')->insert([
+            'id_factura' => 1,
             'numero' => 'FAC-20261006-4198',
             'cliente_nombre' => 'Ronaldo Joya',
             'cliente_documento' => '123456',
@@ -76,20 +86,24 @@ class FacturaPantallasTest extends TestCase
         $response = $this->get(route('detallefacturas.index'));
 
         $response->assertOk()
+            ->assertViewIs('detallefacturas.index')
             ->assertSee('FAC-20261006-4198')
             ->assertSee('Ronaldo Joya')
             ->assertSee('06/10/2026')
             ->assertSee('pagada')
             ->assertSee('$26.000,00')
-            ->assertSee('/detallefacturas/1/edit')
-            ->assertSee('/detallefacturas/1')
-            ->assertSee('Editar factura')
-            ->assertSee('Eliminar factura');
+            ->assertSee(route('detallefacturas.create'));
+
+        $this->get(route('facturas.show', 1))
+            ->assertOk()
+            ->assertViewIs('detallefacturas.show')
+            ->assertSee('Factura #FAC-20261006-4198');
     }
 
     public function test_nueva_factura_abre_el_formulario_en_detalle_factura_y_facturas_solo_permite_ver(): void
     {
         \DB::table('facturas')->insert([
+            'id_factura' => 1,
             'numero' => 'FAC-20261006-4198',
             'cliente_nombre' => 'Ronaldo Joya',
             'cliente_documento' => '123456',
@@ -98,7 +112,7 @@ class FacturaPantallasTest extends TestCase
             'subtotal' => 26000,
             'impuesto' => 0,
             'total' => 26000,
-            'estado' => 'pagada',
+            'estado' => 'emitida',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -118,11 +132,13 @@ class FacturaPantallasTest extends TestCase
 
         $this->get(route('detallefacturas.create'))
             ->assertOk()
+            ->assertViewIs('detallefacturas.create')
             ->assertSee('Nueva factura')
             ->assertSee('Guardar factura');
 
         $this->get(route('detallefacturas.edit', 1))
             ->assertOk()
+            ->assertViewIs('detallefacturas.edit')
             ->assertSee('Editar factura');
     }
 }

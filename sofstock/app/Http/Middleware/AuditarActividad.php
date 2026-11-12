@@ -49,14 +49,26 @@ class AuditarActividad
             $route = $request->route();
             $nombreRuta = $route?->getName() ?? $request->path();
             $metodo = $request->method();
+            $esEliminacionTotal = $metodo === 'DELETE' && (
+                $request->boolean('todo')
+                || $request->boolean('todos')
+                || $request->boolean('eliminar_todo')
+                || $request->boolean('seleccionar_todas')
+                || $request->boolean('all')
+                || str_contains(mb_strtolower($nombreRuta), 'todo')
+                || str_contains(mb_strtolower($request->path()), 'todo')
+            );
             $accion = match ($metodo) {
                 'GET', 'HEAD' => 'CONSULTAR',
                 'POST' => 'ENVIAR',
                 'PUT', 'PATCH' => 'ACTUALIZAR',
-                'DELETE' => 'ELIMINAR',
+                'DELETE' => $esEliminacionTotal ? 'ELIMINAR_TODO' : 'ELIMINAR',
                 default => 'SOLICITUD',
             };
             $modulo = ucfirst(explode('.', $nombreRuta)[0]);
+            $descripcion = $esEliminacionTotal
+                ? 'Se ejecutó la acción "eliminar todo" en el módulo ' . $modulo . '.'
+                : "{$metodo} {$nombreRuta} respondió HTTP {$status}.";
             $parametros = [];
 
             foreach ($route?->parameters() ?? [] as $nombre => $valor) {
@@ -70,7 +82,7 @@ class AuditarActividad
             $this->auditoriaService->registrar(
                 accion: $accion,
                 modulo: $modulo,
-                descripcion: "{$metodo} {$nombreRuta} respondió HTTP {$status}.",
+                descripcion: $descripcion,
                 datosNuevos: [
                     'ruta' => $nombreRuta,
                     'metodo' => $metodo,
@@ -78,7 +90,8 @@ class AuditarActividad
                     'parametros' => $parametros,
                     'datos_enviados' => $request->all(),
                 ],
-                idUsuario: $idUsuario === null ? null : (int) $idUsuario
+                idUsuario: $idUsuario === null ? null : (int) $idUsuario,
+                eliminarTodo: $esEliminacionTotal
             );
         } catch (Throwable $exception) {
             Log::error('No se pudo guardar la actividad en auditorías.', [

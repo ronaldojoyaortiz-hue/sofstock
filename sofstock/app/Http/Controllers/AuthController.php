@@ -75,7 +75,7 @@ class AuthController extends Controller
                 ->onlyInput('correo');
         }
 
-        Auth::login($usuario);
+        Auth::login($usuario, $request->boolean('recordarme'));
         $request->session()->regenerate();
 
         if (! $usuario->pregunta_seguridad || ! $usuario->respuesta_seguridad) {

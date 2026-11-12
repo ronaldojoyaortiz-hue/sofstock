@@ -61,6 +61,8 @@
                     <th scope="col"
                         class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Marca</th>
 
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Fecha de caducidad</th>
+
                     <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Estado</th>
                     <th scope="col"
                         class="px-6 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider">
@@ -95,8 +97,11 @@
                             {{ $producto->marca ?: '—' }}
                         </td>
                         <td class="px-4 py-4 whitespace-nowrap">
-                            <span class="rounded-full px-2.5 py-1 text-xs font-medium {{ $producto->activo ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600' }}">
-                                {{ $producto->activo ? 'Activo' : 'Inactivo' }}
+                            {{ $producto->fecha_caducidad?->format('d/m/Y') ?? '—' }}
+                        </td>
+                        <td class="px-4 py-4 whitespace-nowrap">
+                            <span class="rounded-full px-2.5 py-1 text-xs font-medium {{ $producto->estado === 'Disponible' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600' }}">
+                                {{ $producto->estado }}
                             </span>
                         </td>
 
@@ -167,7 +172,7 @@
 
                     <tr>
 
-                        <td colspan="9"
+                        <td colspan="10"
                             class="px-6 py-8 text-center text-slate-500">
 
                             No hay productos registrados.

@@ -99,6 +99,22 @@
                 >
             </div>
 
+            <div class="mb-6">
+                <label for="recordarme" class="flex items-start gap-2 text-sm text-gray-700">
+                    <input
+                        type="checkbox"
+                        id="recordarme"
+                        name="recordarme"
+                        value="1"
+                        @checked(old('recordarme'))
+                        class="mt-0.5 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                    >
+                    <span>
+                        <span class="font-medium">Recordar</span>
+                    </span>
+                </label>
+            </div>
+
             <button
                 type="submit"
                 class="w-full sena-verde text-white font-semibold

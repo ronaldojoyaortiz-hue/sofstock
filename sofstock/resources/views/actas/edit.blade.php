@@ -6,15 +6,12 @@
 @section('content')
 @php
     $esEdicion = $acta !== null;
-    $tipoSeleccionado = old('tipo', $acta?->tipo ?? '');
-    $productosActa = old('productos', $acta?->productos->map(fn ($producto) => [
-        'producto_id' => $producto->id,
-        'cantidad' => $producto->pivot->cantidad,
-        'observaciones' => $producto->pivot->observaciones,
-    ])->all() ?? []);
+    $tipoSeleccionado = old('tipo_acta', $acta?->tipo_acta ?? '');
+    $productosActa = old('productos', $acta?->productos ?? []);
     $productosActa = $productosActa ?: [['producto_id' => '', 'cantidad' => '1', 'observaciones' => '']];
     $siguienteIndiceProducto = max(array_map('intval', array_keys($productosActa))) + 1;
-    $rolFirmantesSeleccionado = old('rol_firmantes_id', $acta?->firmas->first()?->rol_id);
+    $firmantesIniciales = array_values(old('firmantes', $acta?->firmantesParaMostrar() ?? []));
+    $firmantesIniciales = $firmantesIniciales ?: [['rol_id' => '', 'usuario_id' => '']];
     $estados = [
         'borrador' => 'Borrador',
         'pendiente_aprobacion' => 'Pendiente de aprobación',
@@ -34,16 +31,99 @@
         background: #fff;
         color: #1f2937;
         font-family: "Times New Roman", Times, serif;
+        font-size: 12pt;
+        line-height: 1.5;
         box-shadow: 0 8px 24px rgb(15 23 42 / 10%);
     }
 
-    .acta-document input,
+    .acta-document input:not([type="checkbox"]):not([type="radio"]),
     .acta-document select,
     .acta-document textarea {
-        font-family: Arial, sans-serif;
+        font-family: "Times New Roman", Times, serif;
+        font-size: 12pt;
+        background: transparent;
+        color: inherit;
+        border: 0;
+        border-bottom: 1px solid #9ca3af;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    .acta-document input:not([type="checkbox"]):not([type="radio"]),
+    .acta-document select {
+        padding: 4px 0;
+    }
+
+    .acta-document textarea {
+        min-height: 84px;
+        padding: 8px;
+        border: 1px solid #9ca3af;
+        resize: vertical;
+    }
+
+    .acta-document #productos-section,
+    .acta-document #inmueble-section,
+    .acta-document fieldset {
+        border: 0;
+        border-top: 1px solid #9ca3af;
+        border-radius: 0;
+        background: transparent;
+        padding: 16px 0 0;
+    }
+
+    .acta-document .product-row {
+        border-bottom: 1px solid #d1d5db;
+        border-radius: 0;
+        background: transparent;
+        padding: 12px 0;
+    }
+
+    .acta-document input:not([type="checkbox"]):not([type="radio"]):focus,
+    .acta-document select:focus,
+    .acta-document textarea:focus {
+        outline: 2px solid #2563eb;
+        outline-offset: 2px;
+    }
+
+    html.dark .acta-document {
+        background: #000;
+        color: #f9fafb;
+        border-color: #374151;
+    }
+
+    html.dark .acta-document input:not([type="checkbox"]):not([type="radio"]),
+    html.dark .acta-document select,
+    html.dark .acta-document textarea {
+        color: #f9fafb;
+        border-color: #6b7280;
+        color-scheme: dark;
+    }
+
+    html.dark .acta-document .bg-white,
+    html.dark .acta-document .bg-gray-50 {
+        background-color: #0a0a0a !important;
+    }
+
+    html.dark .acta-document .text-gray-800,
+    html.dark .acta-document .text-gray-700 {
+        color: #f3f4f6 !important;
+    }
+
+    html.dark .acta-document .text-gray-600,
+    html.dark .acta-document .text-gray-500 {
+        color: #d1d5db !important;
+    }
+
+    @page {
+        size: A4 portrait;
+        margin: 0;
     }
 
     @media print {
+        body {
+            margin: 0;
+        }
+
         body * { visibility: hidden; }
         .acta-document, .acta-document * { visibility: visible; }
         .acta-document {
@@ -53,6 +133,14 @@
             min-height: 297mm;
             border: 0;
             box-shadow: none;
+            background: #fff !important;
+            color: #111827 !important;
+        }
+        .acta-document input:not([type="checkbox"]):not([type="radio"]),
+        .acta-document select,
+        .acta-document textarea {
+            color: #111827 !important;
+            color-scheme: light;
         }
         .acta-document .no-print { display: none; }
     }
@@ -79,22 +167,16 @@
             @method('PUT')
         @endif
 
-        <div class="grid grid-cols-1 gap-5 rounded-xl border border-gray-200 bg-white p-5 sm:grid-cols-2">
+        <div class="rounded-xl border border-gray-200 bg-white p-5">
             <div>
-                <label for="codigo" class="mb-1 block text-sm font-medium">Código del acta</label>
-                <input id="codigo" type="text" name="codigo" value="{{ old('codigo', $acta?->codigo) }}"
-                       required maxlength="50" placeholder="Ej. ACTA-2026-001" @readonly($esEdicion)
-                       class="w-full rounded-lg border-gray-300">
-            </div>
-
-            <div>
-                <label for="tipo" class="mb-1 block text-sm font-medium">1. Selecciona el tipo de acta</label>
-                <select id="tipo" name="tipo" required class="w-full rounded-lg border-gray-300">
+                <label for="tipo_acta" class="mb-1 block text-sm font-medium">1. Selecciona el tipo de acta</label>
+                <select id="tipo_acta" name="tipo_acta" required class="w-full rounded-lg border-gray-300">
                     <option value="">Selecciona un tipo</option>
-                    <option value="entrega_bienes" @selected($tipoSeleccionado === 'entrega_bienes')>Entrega de bienes e inventario</option>
+                    <option value="entrega" @selected($tipoSeleccionado === 'entrega')>Acta de entrega</option>
                     <option value="junta_directiva" @selected($tipoSeleccionado === 'junta_directiva')>Junta directiva</option>
-                    <option value="asamblea" @selected($tipoSeleccionado === 'asamblea')>Reunión o asamblea</option>
-                    <option value="entrega_inmueble" @selected($tipoSeleccionado === 'entrega_inmueble')>Inmobiliario (entrega o devolución)</option>
+                    <option value="asamblea" @selected($tipoSeleccionado === 'asamblea')>Asamblea</option>
+                    <option value="inventario" @selected($tipoSeleccionado === 'inventario')>Acta de inventario</option>
+                    <option value="devolucion" @selected($tipoSeleccionado === 'devolucion')>Acta de devolución</option>
                 </select>
             </div>
         </div>
@@ -107,10 +189,20 @@
             <header class="border-b-2 border-gray-800 pb-5 text-center">
                 <p class="text-sm uppercase tracking-widest">Documento oficial</p>
                 <h1 id="document-title" class="mt-3 text-2xl font-bold">ACTA</h1>
-                <p class="mt-2 text-sm">Código: <span id="document-code">{{ old('codigo', $acta?->codigo) }}</span></p>
+                <div class="mt-5 text-left">
+                    <label for="codigo" class="mb-1 block font-semibold">Código del acta</label>
+                    <input id="codigo" type="text" name="codigo" value="{{ old('codigo', $acta?->codigo) }}"
+                           required maxlength="50" placeholder="Escribe el código del acta" @readonly($esEdicion)
+                           class="w-full">
+                </div>
+                <div class="mt-5 text-left">
+                    <label for="titulo" class="mb-1 block font-semibold">Título del acta</label>
+                    <input id="titulo" type="text" name="titulo" value="{{ old('titulo', $acta?->titulo) }}"
+                           required maxlength="255" placeholder="Escribe el título del acta" class="w-full">
+                </div>
             </header>
 
-            <div id="productos-section" @if($tipoSeleccionado !== 'entrega_bienes') hidden @endif class="space-y-3 rounded border border-gray-400 p-4">
+            <div id="productos-section" @if(!in_array($tipoSeleccionado, ['entrega', 'inventario'], true)) hidden @endif class="space-y-3 rounded border border-gray-400 p-4">
                 <div>
                     <h3 class="font-semibold">Productos entregados</h3>
                     <p class="text-sm text-gray-600">Selecciona los productos y cantidades que forman parte de esta acta.</p>
@@ -125,7 +217,7 @@
                                     <option value="">Selecciona un producto</option>
                                     @foreach($productos as $producto)
                                         <option value="{{ $producto->id }}" @selected((string) ($linea['producto_id'] ?? '') === (string) $producto->id)>
-                                            {{ $producto->nombre }} (existencia: {{ $producto->stock_actual }})
+                                            {{ $linea['nombre'] ?? $producto->nombre }} (existencia: {{ $producto->stock_actual }})
                                         </option>
                                     @endforeach
                                 </select>
@@ -152,9 +244,9 @@
                 </button>
             </div>
 
-            <div id="inmueble-section" @if($tipoSeleccionado !== 'entrega_inmueble') hidden @endif class="rounded border border-gray-400 p-4">
-                <label for="inmueble_id" class="mb-1 block font-semibold">Inmobiliario relacionado</label>
-                <p class="mb-2 text-sm text-gray-600">Selecciona el inmueble objeto de la entrega o devolución.</p>
+            <div id="inmueble-section" @if(!in_array($tipoSeleccionado, ['entrega', 'devolucion'], true)) hidden @endif class="rounded border border-gray-400 p-4">
+                <label for="inmueble_id" class="mb-1 block font-semibold">Inmueble relacionado</label>
+                <p class="mb-2 text-sm text-gray-600">Selecciona el inmueble relacionado con la entrega o devolución.</p>
                 <select id="inmueble_id" name="inmueble_id" class="w-full rounded border-gray-400">
                     <option value="">Selecciona un inmueble</option>
                     @forelse($inmuebles as $inmueble)
@@ -171,12 +263,6 @@
             </div>
 
             <div class="space-y-5">
-                <div>
-                    <label for="titulo" class="mb-1 block font-semibold">Título del acta</label>
-                    <input id="titulo" type="text" name="titulo" value="{{ old('titulo', $acta?->titulo) }}"
-                           required maxlength="255" class="w-full rounded border-gray-400">
-                </div>
-
                 <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
                     <div>
                         <label for="fecha" class="mb-1 block font-semibold">Fecha</label>
@@ -185,7 +271,7 @@
                                required class="w-full rounded border-gray-400">
                     </div>
 
-                    <div id="hora-section" @if(in_array($tipoSeleccionado, ['entrega_bienes', 'entrega_inmueble'], true)) hidden @endif>
+                    <div id="hora-section">
                         <label for="hora" class="mb-1 block font-semibold">Hora</label>
                         <input id="hora" type="time" name="hora" value="{{ old('hora', $acta?->hora) }}"
                                class="w-full rounded border-gray-400">
@@ -223,25 +309,7 @@
                 </div>
             </div>
 
-            <fieldset class="space-y-4 rounded border border-gray-400 p-4">
-                <legend class="px-2 font-semibold">Firmas según el rol</legend>
-                <div>
-                    <label for="rol_firmantes_id" class="mb-1 block font-medium">Rol que firma esta acta</label>
-                    <select id="rol_firmantes_id" name="rol_firmantes_id" required class="w-full rounded border-gray-400">
-                        <option value="">Selecciona el rol</option>
-                        @foreach($rolesFirmantes as $rolFirmante)
-                            <option value="{{ $rolFirmante->id_rol }}"
-                                    data-usuarios="{{ $rolFirmante->usuarios->map(fn ($firmante) => ['nombre' => trim($firmante->nombre . ' ' . $firmante->apellido)])->values()->toJson() }}"
-                                    @disabled($rolFirmante->usuarios->isEmpty())
-                                    @selected((string) $rolFirmantesSeleccionado === (string) $rolFirmante->id_rol)>
-                                {{ ucfirst($rolFirmante->nombre_rol) }}{{ $rolFirmante->usuarios->isEmpty() ? ' (sin usuarios activos)' : '' }}
-                            </option>
-                        @endforeach
-                    </select>
-                    <p class="mt-1 text-sm text-gray-600">Se incluirá una firma por cada usuario activo del rol seleccionado.</p>
-                </div>
-                <div id="firmas-preview" class="grid grid-cols-1 gap-x-8 gap-y-12 pt-6 sm:grid-cols-2" aria-live="polite"></div>
-            </fieldset>
+            @include('actas._firmantes')
 
             <div class="no-print flex flex-wrap justify-end gap-3 border-t border-gray-400 pt-5">
                 <a href="{{ route('actas.index') }}" class="rounded border border-gray-400 px-5 py-2">
@@ -280,10 +348,9 @@
 
 <script>
     (() => {
-        const tipo = document.getElementById('tipo');
+        const tipo = document.getElementById('tipo_acta');
         const documentSection = document.getElementById('acta-document');
         const documentTitle = document.getElementById('document-title');
-        const documentCode = document.getElementById('document-code');
         const tipoAyuda = document.getElementById('tipo-ayuda');
         const productosSection = document.getElementById('productos-section');
         const inmuebleSection = document.getElementById('inmueble-section');
@@ -292,55 +359,20 @@
         const hora = document.getElementById('hora');
         const productosList = document.getElementById('productos-list');
         const template = document.getElementById('producto-row-template');
-        const roleSelect = document.getElementById('rol_firmantes_id');
-        const signaturePreview = document.getElementById('firmas-preview');
         const codeInput = document.getElementById('codigo');
         let nextProductIndex = Number(productosList.dataset.nextIndex);
 
-        const renderSignatures = () => {
-            signaturePreview.replaceChildren();
-            const option = roleSelect.selectedOptions[0];
-            if (!option || !option.value) return;
-
-            const signers = JSON.parse(option.dataset.usuarios || '[]');
-            if (!signers.length) {
-                const message = document.createElement('p');
-                message.className = 'text-sm text-amber-700';
-                message.textContent = 'Este rol no tiene usuarios activos asignados.';
-                signaturePreview.append(message);
-                return;
-            }
-
-            signers.forEach((signer) => {
-                const block = document.createElement('div');
-                block.className = 'pt-10 text-center';
-
-                const line = document.createElement('div');
-                line.className = 'border-t border-gray-700 pt-2';
-
-                const name = document.createElement('p');
-                name.className = 'font-semibold';
-                name.textContent = signer.nombre;
-
-                const role = document.createElement('p');
-                role.className = 'text-sm capitalize';
-                role.textContent = option.textContent.replace(/\s*\(sin usuarios activos\)\s*/i, '').trim();
-
-                line.append(name, role);
-                block.append(line);
-                signaturePreview.append(block);
-            });
-        };
-
         const actualizarTipo = () => {
             const tieneTipo = Boolean(tipo.value);
-            const esEntregaBienes = tipo.value === 'entrega_bienes';
-            const esEntregaInmueble = tipo.value === 'entrega_inmueble';
+            const muestraProductos = ['entrega', 'inventario'].includes(tipo.value);
+            const esDevolucion = tipo.value === 'devolucion';
             const tipoLabels = {
-                entrega_bienes: 'ACTA DE ENTREGA DE BIENES E INVENTARIO',
+                entrega: 'ACTA DE ENTREGA',
+                recibo: 'ACTA DE RECIBO',
                 junta_directiva: 'ACTA DE JUNTA DIRECTIVA',
-                asamblea: 'ACTA DE REUNIÓN O ASAMBLEA',
-                entrega_inmueble: 'ACTA DE ENTREGA O DEVOLUCIÓN DE INMUEBLE',
+                asamblea: 'ACTA DE ASAMBLEA',
+                inventario: 'ACTA DE INVENTARIO',
+                devolucion: 'ACTA DE DEVOLUCIÓN',
             };
 
             documentSection.hidden = !tieneTipo;
@@ -348,27 +380,23 @@
                 field.disabled = !tieneTipo;
             });
             documentTitle.textContent = tipoLabels[tipo.value] || 'ACTA';
-            documentCode.textContent = codeInput.value;
-            productosSection.hidden = !esEntregaBienes;
-            inmuebleSection.hidden = !esEntregaInmueble;
-            inmueble.required = tieneTipo && esEntregaInmueble;
-            inmueble.disabled = !tieneTipo || !esEntregaInmueble;
-            horaSection.hidden = esEntregaBienes || esEntregaInmueble;
-            hora.disabled = !tieneTipo || esEntregaBienes || esEntregaInmueble;
+            productosSection.hidden = !muestraProductos;
+            inmuebleSection.hidden = !['entrega', 'devolucion'].includes(tipo.value);
+            inmueble.required = tieneTipo && esDevolucion;
+            inmueble.disabled = !tieneTipo || !['entrega', 'devolucion'].includes(tipo.value);
+            hora.disabled = !tieneTipo;
 
             productosList.querySelectorAll('.product-select').forEach((select) => {
-                select.required = tieneTipo && esEntregaBienes;
-                select.disabled = !tieneTipo || !esEntregaBienes;
+                select.required = tieneTipo && tipo.value === 'inventario';
+                select.disabled = !tieneTipo || !muestraProductos;
             });
             productosList.querySelectorAll('.product-row input').forEach((input) => {
-                input.disabled = !tieneTipo || !esEntregaBienes;
+                input.disabled = !tieneTipo || !muestraProductos;
             });
-            roleSelect.disabled = !tieneTipo;
 
             tipoAyuda.textContent = tieneTipo
                 ? 'Documento listo para completar. Los campos específicos corresponden al tipo de acta seleccionado.'
                 : 'Selecciona el tipo de acta para abrir el documento y sus campos.';
-            renderSignatures();
         };
 
         document.getElementById('add-product').addEventListener('click', () => {
@@ -388,10 +416,6 @@
         });
 
         tipo.addEventListener('change', actualizarTipo);
-        codeInput.addEventListener('input', () => {
-            documentCode.textContent = codeInput.value;
-        });
-        roleSelect.addEventListener('change', renderSignatures);
         actualizarTipo();
     })();
 </script>

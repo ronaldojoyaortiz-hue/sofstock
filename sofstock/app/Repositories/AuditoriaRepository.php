@@ -94,4 +94,56 @@ class AuditoriaRepository
             'created_at' => now(),
         ]);
     }
+
+    public function ocultarVariasParaUsuario(array $auditoriaIds, int $usuarioId): int
+    {
+        $idsVisibles = Auditoria::query()
+            ->whereIn('id_auditoria', $auditoriaIds)
+            ->whereNotExists(function ($query) use ($usuarioId): void {
+                $query->selectRaw('1')
+                    ->from('auditoria_usuario_oculta')
+                    ->whereColumn('auditoria_usuario_oculta.id_auditoria', 'auditorias.id_auditoria')
+                    ->where('auditoria_usuario_oculta.id_usuario', $usuarioId);
+            })
+            ->pluck('id_auditoria');
+
+        if ($idsVisibles->isEmpty()) {
+            return 0;
+        }
+
+        $ahora = now();
+        $ocultas = $idsVisibles->map(fn ($id): array => [
+            'id_auditoria' => $id,
+            'id_usuario' => $usuarioId,
+            'created_at' => $ahora,
+        ])->all();
+
+        return DB::table('auditoria_usuario_oculta')->insertOrIgnore($ocultas);
+    }
+
+    public function ocultarTodasParaUsuario(int $usuarioId): int
+    {
+        $cantidad = 0;
+
+        Auditoria::query()
+            ->select('id_auditoria')
+            ->whereNotExists(function ($query) use ($usuarioId): void {
+                $query->selectRaw('1')
+                    ->from('auditoria_usuario_oculta')
+                    ->whereColumn('auditoria_usuario_oculta.id_auditoria', 'auditorias.id_auditoria')
+                    ->where('auditoria_usuario_oculta.id_usuario', $usuarioId);
+            })
+            ->chunkById(500, function ($auditorias) use ($usuarioId, &$cantidad): void {
+                $ahora = now();
+                $ocultas = $auditorias->map(fn (Auditoria $auditoria): array => [
+                    'id_auditoria' => $auditoria->id_auditoria,
+                    'id_usuario' => $usuarioId,
+                    'created_at' => $ahora,
+                ])->all();
+
+                $cantidad += DB::table('auditoria_usuario_oculta')->insertOrIgnore($ocultas);
+            }, 'id_auditoria');
+
+        return $cantidad;
+    }
 }

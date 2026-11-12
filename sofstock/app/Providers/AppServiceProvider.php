@@ -13,7 +13,6 @@ use App\Models\Producto;
 use App\Models\Proveedores;
 use App\Models\Rol;
 use App\Models\Usuario;
-use App\Models\User;
 use App\Models\ConfiguracionSistema;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -45,9 +44,8 @@ class AppServiceProvider extends ServiceProvider
         Proveedores::observe(AuditoriaObserver::class);
         Rol::observe(AuditoriaObserver::class);
         Usuario::observe(AuditoriaObserver::class);
-        User::observe(AuditoriaObserver::class);
 
-        View::composer(['layouts.app', 'reportes.show'], function ($view): void {
+        View::composer(['layouts.app', 'reportes.index', 'reportes.show'], function ($view): void {
             $configuracion = Schema::hasTable('configuraciones_sistema')
                 ? ConfiguracionSistema::query()->find(1)
                 : null;

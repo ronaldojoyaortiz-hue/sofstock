@@ -7,11 +7,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 
 class Usuario extends Authenticatable
 {
-    use HasRoles;
+    use HasRoles, Notifiable;
 
     public const TIPOS_DOCUMENTO = [
         'CC',
@@ -74,6 +75,16 @@ class Usuario extends Authenticatable
     public function getAuthPassword(): string
     {
         return $this->contrasena;
+    }
+
+    public function getEmailForPasswordReset(): string
+    {
+        return $this->correo;
+    }
+
+    public function routeNotificationForMail($notification = null): string
+    {
+        return $this->correo;
     }
 
     public function scopeAdministradores(Builder $query): Builder
